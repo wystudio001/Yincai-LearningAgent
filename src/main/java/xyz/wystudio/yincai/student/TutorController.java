@@ -144,7 +144,12 @@ public class TutorController {
                 }, cancelled::get);
 
                 if (!cancelled.get()) {
-                    String finalReply = reply.length() == 0 ? "暂时没有生成回答" : reply.toString();
+                    if (reply.length() == 0) {
+                        throw new xyz.wystudio.yincai.core.BizException(
+                                ErrorCode.AI_SERVICE_UNAVAILABLE,
+                                "大模型返回为空，请检查模型配置或稍后重试");
+                    }
+                    String finalReply = reply.toString();
                     saveAssistant(session, assistantId, finalReply);
                     assistantSaved.set(true);
                     emitter.send(SseEmitter.event().name("done").data(Map.of(

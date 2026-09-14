@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -75,7 +76,24 @@ public class OpenAiCompatibleClient {
                     throw new BizException(ErrorCode.AI_SERVICE_UNAVAILABLE,
                             "大模型接口调用失败，HTTP " + response.statusCode() + "：" + truncate(readAll(stream)));
                 }
-                readSse(stream, onDelta, cancelled);
+                String contentType = response.headers().firstValue("Content-Type").orElse("");
+                if (contentType.toLowerCase(Locale.ROOT).contains("text/event-stream")) {
+                    boolean emitted = readSse(stream, onDelta, cancelled);
+                    if (!emitted && (cancelled == null || !cancelled.getAsBoolean())) {
+                        throw new BizException(ErrorCode.AI_SERVICE_UNAVAILABLE,
+                                "大模型返回为空，请检查模型配置或稍后重试");
+                    }
+                } else {
+                    // Some OpenAI-compatible gateways ignore stream=true and return one JSON response.
+                    String responseBody = readAll(stream);
+                    String content = extractChatContent(responseBody);
+                    if (StringUtils.hasText(content)) {
+                        onDelta.accept(content);
+                    } else if (cancelled == null || !cancelled.getAsBoolean()) {
+                        throw new BizException(ErrorCode.AI_SERVICE_UNAVAILABLE,
+                                "大模型返回为空，请检查模型配置或稍后重试");
+                    }
+                }
             }
         } catch (IllegalArgumentException e) {
             throw new BizException(ErrorCode.BAD_REQUEST, "baseURL 格式不正确：" + e.getMessage(), e);
@@ -238,7 +256,7 @@ public class OpenAiCompatibleClient {
             JsonNode choice = root.path("choices").isArray() && !root.path("choices").isEmpty()
                     ? root.path("choices").get(0)
                     : objectMapper.createObjectNode();
-            String content = choice.path("message").path("content").asText("");
+            String content = extractChatContent(root);
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("providerId", String.valueOf(provider.getId()));
             result.put("providerName", provider.getName());
@@ -252,16 +270,17 @@ public class OpenAiCompatibleClient {
         }
     }
 
-    private void readSse(InputStream stream, Consumer<String> onDelta, BooleanSupplier cancelled) throws IOException {
+    private boolean readSse(InputStream stream, Consumer<String> onDelta, BooleanSupplier cancelled) throws IOException {
+        boolean emitted = false;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             StringBuilder data = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
                 if (cancelled != null && cancelled.getAsBoolean()) {
-                    return;
+                    return emitted;
                 }
                 if (line.isEmpty()) {
-                    emitSseData(data, onDelta);
+                    emitted = emitSseData(data, onDelta) || emitted;
                     data.setLength(0);
                     continue;
                 }
@@ -273,17 +292,18 @@ public class OpenAiCompatibleClient {
                     data.append(value.startsWith(" ") ? value.substring(1) : value);
                 }
             }
-            emitSseData(data, onDelta);
+            emitted = emitSseData(data, onDelta) || emitted;
         }
+        return emitted;
     }
 
-    private void emitSseData(StringBuilder data, Consumer<String> onDelta) throws IOException {
+    private boolean emitSseData(StringBuilder data, Consumer<String> onDelta) throws IOException {
         if (data.length() == 0 || onDelta == null) {
-            return;
+            return false;
         }
         String raw = data.toString().trim();
         if (raw.isEmpty() || "[DONE]".equals(raw)) {
-            return;
+            return false;
         }
         try {
             JsonNode root = objectMapper.readTree(raw);
@@ -292,21 +312,80 @@ public class OpenAiCompatibleClient {
             }
             JsonNode choices = root.path("choices");
             if (!choices.isArray() || choices.isEmpty()) {
-                return;
+                return false;
             }
             JsonNode delta = choices.path(0).path("delta");
-            JsonNode content = delta.path("content");
-            if (content.isTextual()) {
-                String value = content.asText();
-                if (!value.isEmpty()) {
-                    onDelta.accept(value);
-                }
+            String value = extractText(delta.path("content"));
+            if (!StringUtils.hasText(value)) {
+                value = extractText(delta.path("text"));
             }
+            if (!StringUtils.hasText(value)) {
+                value = extractText(choices.path(0).path("text"));
+            }
+            if (StringUtils.hasText(value)) {
+                onDelta.accept(value);
+                return true;
+            }
+            return false;
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
             throw new IOException("大模型流式响应解析失败：" + e.getMessage(), e);
         }
+    }
+
+    private String extractChatContent(String responseBody) throws IOException {
+        try {
+            return extractChatContent(objectMapper.readTree(responseBody));
+        } catch (Exception e) {
+            throw new IOException("大模型响应解析失败：" + e.getMessage(), e);
+        }
+    }
+
+    private String extractChatContent(JsonNode root) {
+        if (root == null || root.isMissingNode() || root.isNull()) {
+            return "";
+        }
+        String direct = extractText(root.path("output_text"));
+        if (StringUtils.hasText(direct)) {
+            return direct;
+        }
+        JsonNode choices = root.path("choices");
+        if (!choices.isArray() || choices.isEmpty()) {
+            return "";
+        }
+        JsonNode choice = choices.get(0);
+        String content = extractText(choice.path("message").path("content"));
+        if (!StringUtils.hasText(content)) {
+            content = extractText(choice.path("delta").path("content"));
+        }
+        if (!StringUtils.hasText(content)) {
+            content = extractText(choice.path("text"));
+        }
+        return content;
+    }
+
+    private String extractText(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return "";
+        }
+        if (node.isTextual()) {
+            return node.asText();
+        }
+        if (node.isArray()) {
+            StringBuilder text = new StringBuilder();
+            for (JsonNode item : node) {
+                String value = extractText(item.path("text"));
+                if (!StringUtils.hasText(value)) {
+                    value = extractText(item);
+                }
+                if (StringUtils.hasText(value)) {
+                    text.append(value);
+                }
+            }
+            return text.toString();
+        }
+        return "";
     }
 
     private String readAll(InputStream stream) throws IOException {
