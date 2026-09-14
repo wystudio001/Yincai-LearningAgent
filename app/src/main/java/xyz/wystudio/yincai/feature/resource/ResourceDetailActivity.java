@@ -88,7 +88,10 @@ public final class ResourceDetailActivity extends AppCompatActivity {
             @Override public void success(Map<String, Object> data) {
                 String url = MapValues.text(data, "downloadUrl", "");
                 if (url.isEmpty()) { state.append("\n暂时没有下载地址"); return; }
-                if (url.startsWith("/")) url = xyz.wystudio.yincai.BuildConfig.BASE_URL + url.substring(1);
+                if (url.startsWith("/")) {
+                    String base = ((YinCaiApplication) getApplication()).sessionManager().getBackendUrl();
+                    url = base + url.substring(1);
+                }
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception ignored) { state.append("\n无法打开下载地址：" + url); }
             }
             @Override public void failure(String message) { state.append("\n下载地址读取失败：" + message); }

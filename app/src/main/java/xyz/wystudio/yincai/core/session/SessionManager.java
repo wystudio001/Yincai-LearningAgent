@@ -3,20 +3,25 @@ package xyz.wystudio.yincai.core.session;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import xyz.wystudio.yincai.BuildConfig;
 import xyz.wystudio.yincai.data.dto.LoginResponse;
 
 /** 仅保存后端会话，不保存任何上游模型配置。 */
 public final class SessionManager {
     private static final String PREFS = "student_session";
+    private static final String SETTINGS_PREFS = "student_settings";
+    private static final String BACKEND_URL = "backend_url";
     private static final String ACCESS_TOKEN = "access_token";
     private static final String REFRESH_TOKEN = "refresh_token";
     private static final String USER_ID = "user_id";
     private static final String USERNAME = "username";
     private static final String ROLE_CODE = "role_code";
     private final SharedPreferences preferences;
+    private final SharedPreferences settingsPreferences;
 
     public SessionManager(Context context) {
         preferences = context.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        settingsPreferences = context.getApplicationContext().getSharedPreferences(SETTINGS_PREFS, Context.MODE_PRIVATE);
     }
     public synchronized void save(LoginResponse response) {
         preferences.edit()
@@ -32,6 +37,12 @@ public final class SessionManager {
     public synchronized String getUserId() { return preferences.getString(USER_ID, null); }
     public synchronized String getUsername() { return preferences.getString(USERNAME, null); }
     public synchronized String getRoleCode() { return preferences.getString(ROLE_CODE, null); }
+    public synchronized String getBackendUrl() {
+        return settingsPreferences.getString(BACKEND_URL, BuildConfig.BASE_URL);
+    }
+    public synchronized void setBackendUrl(String url) {
+        settingsPreferences.edit().putString(BACKEND_URL, url).apply();
+    }
     public synchronized boolean hasSession() { return getAccessToken() != null && getRefreshToken() != null; }
     public synchronized boolean isStudent() { return "STUDENT".equalsIgnoreCase(getRoleCode()); }
     public synchronized void clear() { preferences.edit().clear().apply(); }

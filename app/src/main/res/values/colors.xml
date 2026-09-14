@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFB9C7FF</color>
-    <color name="purple_500">#FF4A5BD5</color>
-    <color name="purple_700">#FF283593</color>
-    <color name="purple_100">#FFF0F2FF</color>
-    <color name="teal_200">#FF5BC7B2</color>
-    <color name="teal_700">#FF147D70</color>
-    <color name="surface">#FFF8F9FC</color>
-    <color name="surface_variant">#FFE9EBF3</color>
-    <color name="text_primary">#FF1B1D2A</color>
-    <color name="text_secondary">#FF656978</color>
-    <color name="success">#FF238A63</color>
-    <color name="warning">#FFB56A00</color>
-    <color name="nav_item_tint">#FF4A5BD5</color>
+    <color name="purple_200">#FF30D158</color>
+    <color name="purple_500">#FF30D158</color>
+    <color name="purple_700">#FF1A3A2A</color>
+    <color name="purple_100">#FFB7F5C3</color>
+    <color name="teal_200">#FF64D2FF</color>
+    <color name="teal_700">#FF0A84FF</color>
+    <color name="surface">#FF000000</color>
+    <color name="surface_variant">#FF2C2C2E</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FF8E8E93</color>
+    <color name="success">#FF30D158</color>
+    <color name="warning">#FFFF9F0A</color>
+    <color name="danger">#FFF85149</color>
+    <color name="nav_item_tint">#FF30D158</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

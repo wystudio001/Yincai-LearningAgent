@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.concurrent.locks.ReentrantLock;
 
 import okhttp3.Authenticator;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.Route;
@@ -23,8 +24,12 @@ public final class TokenAuthenticator implements Authenticator {
 
     public TokenAuthenticator(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
+        OkHttpClient refreshClient = new OkHttpClient.Builder()
+                .addInterceptor(new BackendUrlInterceptor(sessionManager))
+                .build();
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(xyz.wystudio.yincai.BuildConfig.BASE_URL)
+                .client(refreshClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         refreshApi = retrofit.create(AuthApi.class);

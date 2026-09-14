@@ -21,6 +21,13 @@ public final class ApiClient {
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
+                .addInterceptor(chain -> {
+                    if (chain.request().url().encodedPath().contains("/messages/stream")) {
+                        return chain.withReadTimeout(0, TimeUnit.MILLISECONDS).proceed(chain.request());
+                    }
+                    return chain.proceed(chain.request());
+                })
+                .addInterceptor(new BackendUrlInterceptor(sessionManager))
                 .addInterceptor(new AuthInterceptor(sessionManager))
                 .authenticator(new TokenAuthenticator(sessionManager))
                 .addInterceptor(logging)

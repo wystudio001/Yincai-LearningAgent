@@ -2,7 +2,6 @@ package xyz.wystudio.yincai.feature.main;
 
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,13 +13,11 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import xyz.wystudio.yincai.R;
 
 public final class MainActivity extends AppCompatActivity {
-    private TextView titleView;
     private Fragment activeFragment;
     private int activeItemId = R.id.nav_home;
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        titleView = findViewById(R.id.text_toolbar_title);
         BottomNavigationView navigation = findViewById(R.id.bottom_navigation);
         navigation.setOnItemSelectedListener(this::selectTab);
         int restoredId = savedInstanceState == null
@@ -30,20 +27,18 @@ public final class MainActivity extends AppCompatActivity {
     }
     private boolean selectTab(@NonNull MenuItem item) {
         Fragment fragment;
-        String title;
         int itemId = item.getItemId();
         if (itemId == R.id.nav_path) {
-            fragment = new LearningPathFragment(); title = "学习路径";
+            fragment = new LearningPathFragment();
         } else if (itemId == R.id.nav_resources) {
-            fragment = new ResourceCenterFragment(); title = "资源中心";
+            fragment = new ResourceCenterFragment();
         } else if (itemId == R.id.nav_tutor) {
-            fragment = new TutorEntryFragment(); title = "智能辅导";
+            fragment = new HomeFragment();
         } else if (itemId == R.id.nav_mine) {
-            fragment = new MineFragment(); title = "我的";
+            fragment = new MineFragment();
         } else {
-            fragment = new HomeFragment(); title = "首页";
+            fragment = new TutorEntryFragment();
         }
-        titleView.setText(title);
         FragmentManager manager = getSupportFragmentManager();
         String tag = "main_tab_" + itemId;
         Fragment existing = manager.findFragmentByTag(tag);
