@@ -2,4 +2,6 @@
     <string name="app_name">因材智学</string>
     <string name="student_client">学生端</string>
     <string name="login_input_required">请输入用户名和密码</string>
+    <string name="network_retry">重新加载</string>
+    <string name="empty_content">暂时没有内容</string>
 </resources>

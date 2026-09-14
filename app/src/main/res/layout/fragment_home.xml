@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
-        <TextView android:id="@+id/text_home_greeting" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="24sp" android:textStyle="bold" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="今天也为自己的目标前进一点" android:textSize="15sp" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:text="今日学习" android:textSize="18sp" android:textStyle="bold" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@color/purple_100" android:padding="20dp" android:text="还没有安排学习任务\n去学习路径看看下一步" android:textSize="16sp" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:text="推荐入口" android:textSize="18sp" android:textStyle="bold" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@color/teal_200" android:padding="20dp" android:text="构建学习画像    生成学习资源    开始练习" android:textSize="16sp" />
+        <TextView android:id="@+id/text_home_greeting" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="你好，开始今天的学习" android:textColor="@color/text_primary" android:textSize="25sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="把目标拆成今天可以完成的一小步" android:textColor="@color/text_secondary" android:textSize="14sp" />
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp" app:cardBackgroundColor="@color/purple_700" app:cardCornerRadius="12dp" app:strokeWidth="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="18dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="学习画像" android:textColor="@color/white" android:textSize="14sp" />
+                <TextView android:id="@+id/text_home_profile" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="正在读取你的学习状态..." android:textColor="@color/white" android:textSize="19sp" android:textStyle="bold" />
+                <TextView android:id="@+id/text_home_profile_hint" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="学习画像会帮助系统调整推荐内容" android:textColor="@color/purple_100" android:textSize="13sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="今天的学习" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="vertical" android:background="@color/white" android:padding="16dp">
+            <TextView android:id="@+id/text_home_path" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="正在读取学习路径..." android:textColor="@color/text_primary" android:textSize="16sp" android:textStyle="bold" />
+            <TextView android:id="@+id/text_home_path_hint" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="完成当前节点后，系统会更新下一步建议" android:textColor="@color/text_secondary" android:textSize="13sp" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="快捷入口" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+            <Button android:id="@+id/button_home_path" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="学习路径" android:textAllCaps="false" />
+            <Space android:layout_width="10dp" android:layout_height="1dp" />
+            <Button android:id="@+id/button_home_tutor" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="问问导师" android:textAllCaps="false" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+            <Button android:id="@+id/button_home_profile" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="构建学习画像" android:textAllCaps="false" />
+            <Space android:layout_width="10dp" android:layout_height="1dp" />
+            <Button android:id="@+id/button_home_generate" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="生成学习资源" android:textAllCaps="false" />
+        </LinearLayout>
+        <Button android:id="@+id/button_home_retry" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:layout_marginTop="10dp" android:text="重新加载" android:textAllCaps="false" android:visibility="gone" />
     </LinearLayout>
 </ScrollView>

@@ -10,11 +10,14 @@ import retrofit2.http.Path;
 import xyz.wystudio.yincai.core.common.ApiResponse;
 
 public interface ExerciseApi {
-    @GET("api/v1/exercises") Call<ApiResponse<List<Map<String, Object>>>> list();
+    @GET("api/v1/questions") Call<ApiResponse<CourseApi.PageData<Map<String, Object>>>> questions(@retrofit2.http.Query("pageNo") int pageNo, @retrofit2.http.Query("pageSize") int pageSize);
+    @GET("api/v1/exercises") Call<ApiResponse<CourseApi.PageData<Map<String, Object>>>> list(@retrofit2.http.Query("pageNo") int pageNo, @retrofit2.http.Query("pageSize") int pageSize);
     @GET("api/v1/exercises/{id}") Call<ApiResponse<Map<String, Object>>> detail(@Path("id") String id);
+    @GET("api/v1/exercises/{id}/questions") Call<ApiResponse<List<Map<String, Object>>>> exerciseQuestions(@Path("id") String id);
     @POST("api/v1/exercises/{id}/start") Call<ApiResponse<Map<String, Object>>> start(@Path("id") String id);
-    @POST("api/v1/exercises/{id}/answers") Call<ApiResponse<Void>> answer(@Path("id") String id, @Body Map<String, Object> body);
+    @POST("api/v1/exercises/{id}/answers") Call<ApiResponse<Void>> answer(@Path("id") String id, @Body List<Map<String, Object>> body);
     @POST("api/v1/exercises/{id}/submit") Call<ApiResponse<Map<String, Object>>> submit(@Path("id") String id);
     @GET("api/v1/exercises/{id}/result") Call<ApiResponse<Map<String, Object>>> result(@Path("id") String id);
-    @GET("api/v1/student/wrong-questions") Call<ApiResponse<List<Map<String, Object>>>> wrongQuestions();
+    @GET("api/v1/student/wrong-questions") Call<ApiResponse<CourseApi.PageData<Map<String, Object>>>> wrongQuestions(@retrofit2.http.Query("pageNo") int pageNo, @retrofit2.http.Query("pageSize") int pageSize);
+    @POST("api/v1/student/wrong-questions/{questionId}/reviewed") Call<ApiResponse<Void>> markWrongReviewed(@Path("questionId") String questionId);
 }

@@ -17,6 +17,22 @@
         <activity
             android:name=".feature.main.MainActivity"
             android:exported="false" />
+        <activity android:name=".feature.course.CourseSelectActivity" android:exported="false" />
+        <activity android:name=".feature.profile.ProfileActivity" android:exported="false" />
+        <activity android:name=".feature.profile.ProfileDialogueActivity" android:exported="false" />
+        <activity android:name=".feature.learningpath.LearningNodeDetailActivity" android:exported="false" />
+        <activity android:name=".feature.resource.ResourceDetailActivity" android:exported="false" />
+        <activity android:name=".feature.resource.ResourceReaderActivity" android:exported="false" />
+        <activity android:name=".feature.resource.ResourceGenerationActivity" android:exported="false" />
+        <activity android:name=".feature.resource.GenerationProgressActivity" android:exported="false" />
+        <activity android:name=".feature.tutor.TutorChatActivity" android:exported="false" />
+        <activity android:name=".feature.exercise.ExerciseActivity" android:exported="false" />
+        <activity android:name=".feature.exercise.ExerciseResultActivity" android:exported="false" />
+        <activity android:name=".feature.exercise.WrongQuestionsActivity" android:exported="false" />
+        <activity android:name=".feature.assessment.AssessmentReportActivity" android:exported="false" />
+        <activity android:name=".feature.search.SearchActivity" android:exported="false" />
+        <activity android:name=".feature.notification.NotificationActivity" android:exported="false" />
+        <activity android:name=".feature.settings.SettingsActivity" android:exported="false" />
         <activity
             android:name=".feature.auth.AuthActivity"
             android:exported="false" />

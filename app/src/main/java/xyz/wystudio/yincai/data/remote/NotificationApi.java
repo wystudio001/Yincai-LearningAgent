@@ -10,7 +10,7 @@ import retrofit2.http.Path;
 import xyz.wystudio.yincai.core.common.ApiResponse;
 
 public interface NotificationApi {
-    @GET("api/v1/notifications") Call<ApiResponse<List<Map<String, Object>>>> list();
+    @GET("api/v1/notifications") Call<ApiResponse<CourseApi.PageData<Map<String, Object>>>> list(@retrofit2.http.Query("pageNo") int pageNo, @retrofit2.http.Query("pageSize") int pageSize);
     @GET("api/v1/notifications/unread-count") Call<ApiResponse<Map<String, Object>>> unreadCount();
     @PATCH("api/v1/notifications/{notificationId}/read") Call<ApiResponse<Void>> markRead(@Path("notificationId") String notificationId);
     @PATCH("api/v1/notifications/read-all") Call<ApiResponse<Void>> markAllRead();

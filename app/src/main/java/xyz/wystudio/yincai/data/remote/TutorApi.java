@@ -13,6 +13,8 @@ public interface TutorApi {
     @POST("api/v1/tutor/sessions") Call<ApiResponse<Map<String, Object>>> createSession(@Body Map<String, Object> body);
     @GET("api/v1/tutor/sessions") Call<ApiResponse<List<Map<String, Object>>>> sessions();
     @POST("api/v1/tutor/sessions/{sessionId}/messages") Call<ApiResponse<Map<String, Object>>> sendMessage(@Path("sessionId") String sessionId, @Body Map<String, Object> body);
+    @GET("api/v1/tutor/sessions/{sessionId}/stream") Call<ApiResponse<Map<String, Object>>> stream(@Path("sessionId") String sessionId);
+    @GET("api/v1/tutor/sessions/{sessionId}/messages") Call<ApiResponse<List<Map<String, Object>>>> messages(@Path("sessionId") String sessionId);
     @GET("api/v1/tutor/recommended-questions") Call<ApiResponse<List<String>>> recommendedQuestions();
     @POST("api/v1/tutor/messages/{messageId}/feedback") Call<ApiResponse<Void>> feedback(@Path("messageId") String messageId, @Body Map<String, Object> body);
 }

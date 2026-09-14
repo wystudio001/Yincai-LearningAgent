@@ -1,9 +1,65 @@
 package xyz.wystudio.yincai.feature.main;
+
+import android.graphics.Color;
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.*;
-import androidx.annotation.*;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import java.util.List;
+import java.util.Map;
 import xyz.wystudio.yincai.R;
+import xyz.wystudio.yincai.YinCaiApplication;
+import xyz.wystudio.yincai.core.common.MapValues;
+import xyz.wystudio.yincai.core.network.NetworkCall;
+import xyz.wystudio.yincai.data.remote.LearningPathApi;
+
 public class LearningPathFragment extends Fragment {
-    @Nullable @Override public View onCreateView(@NonNull LayoutInflater i, @Nullable ViewGroup c, @Nullable Bundle b) { return i.inflate(R.layout.fragment_learning_path, c, false); }
+    private TextView status, title; private LinearLayout content; private View retry; private YinCaiApplication app;
+    @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_learning_path, container, false); app = (YinCaiApplication) requireActivity().getApplication();
+        status=view.findViewById(R.id.text_path_status); title=view.findViewById(R.id.text_path_title); content=view.findViewById(R.id.path_content); retry=view.findViewById(R.id.button_path_retry); retry.setOnClickListener(v -> load()); load(); return view;
+    }
+    private void load() {
+        status.setText("正在加载学习路径..."); retry.setVisibility(View.GONE); content.removeAllViews(); String studentId=app.sessionManager().getUserId();
+        if (studentId == null) { error("会话信息不完整，请重新登录"); return; }
+        NetworkCall.enqueue(app.apiClient().create(LearningPathApi.class).current(studentId), new NetworkCall.Result<Map<String,Object>>() {
+            @Override public void success(Map<String,Object> data) { if (!isAdded()) return; List<Map<String,Object>> nodes=MapValues.maps(data,"nodes"); title.setText("我的学习路径"); if (nodes.isEmpty()) { status.setText("还没有可展示的学习节点"); addText("完成课程选择后，系统会生成适合你的学习路径", Color.DKGRAY); return; } status.setText("共 " + nodes.size() + " 个学习节点"); for (Map<String,Object> node:nodes) addNode(node); }
+            @Override public void failure(String message) {
+                if (!isAdded()) return;
+                if (message != null && message.contains("不存在")) {
+                    title.setText("我的学习路径");
+                    status.setText("还没有可展示的学习路径");
+                    addText("完成课程选择后，系统会生成适合你的学习路径", Color.DKGRAY);
+                } else {
+                    error(message);
+                }
+            }
+        });
+    }
+    private void addNode(Map<String,Object> node) {
+        LinearLayout box=new LinearLayout(requireContext()); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(18,16,18,16); box.setBackgroundColor(Color.WHITE); LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2); lp.setMargins(0,0,0,12); box.setLayoutParams(lp);
+        TextView heading=new TextView(requireContext()); heading.setText(MapValues.text(node,"target","学习节点")); heading.setTextColor(Color.rgb(27,29,42)); heading.setTextSize(17); heading.setTypeface(null, android.graphics.Typeface.BOLD); box.addView(heading);
+        TextView meta=new TextView(requireContext()); meta.setText("状态：" + MapValues.text(node,"status","PENDING") + "\n完成规则：" + MapValues.text(node,"completionRule","完成本节点学习内容")); meta.setTextColor(Color.rgb(101,105,120)); meta.setTextSize(13); LinearLayout.LayoutParams mlp=new LinearLayout.LayoutParams(-1,-2); mlp.setMargins(0,6,0,0); box.addView(meta,mlp);
+        box.setOnClickListener(v -> {
+            String nodeId = MapValues.text(node, "id", null);
+            if (nodeId == null) {
+                addText("该节点缺少有效标识，暂时无法打开", Color.rgb(180, 60, 60));
+                return;
+            }
+            Intent intent=new Intent(requireContext(), xyz.wystudio.yincai.feature.learningpath.LearningNodeDetailActivity.class);
+            intent.putExtra("nodeId", nodeId);
+            intent.putExtra("target", MapValues.text(node,"target","学习节点"));
+            intent.putExtra("status", MapValues.text(node,"status","PENDING"));
+            intent.putExtra("completionRule", MapValues.text(node,"completionRule","完成本节点学习内容"));
+            startActivity(intent);
+        }); content.addView(box);
+    }
+    private void addText(String text,int color) { TextView v=new TextView(requireContext()); v.setText(text); v.setTextColor(color); v.setTextSize(15); v.setPadding(4,12,4,12); content.addView(v); }
+    private void error(String message) { status.setText("学习路径加载失败"); addText(message, Color.rgb(180,60,60)); retry.setVisibility(View.VISIBLE); }
 }
