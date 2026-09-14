@@ -371,6 +371,12 @@ public final class TutorEntryFragment extends Fragment {
 
     private void finishStreamDone(String messageId, String finalContent) {
         if (!isAdded() || getView() == null || userStopped || streamFinished) return;
+        boolean hasExistingContent = streamingContent != null && streamingContent.length() > 0;
+        boolean emptyFallback = "暂时没有生成回答".equals(finalContent);
+        if ((!hasExistingContent && (finalContent == null || finalContent.trim().isEmpty())) || emptyFallback) {
+            finishStreamError("智能体没有返回内容，请检查后端大模型配置或稍后重试。");
+            return;
+        }
         streamFinished = true;
         if (messageId != null && !messageId.isEmpty()) streamingMessageId = messageId;
         if (finalContent != null && !finalContent.isEmpty()
@@ -380,9 +386,6 @@ public final class TutorEntryFragment extends Fragment {
             if (streamingRow == null) createStreamingBubble();
             streamingContent.append(finalContent);
             if (streamingMarkdown != null) streamingMarkdown.setMarkdown(streamingContent.toString());
-        }
-        if (streamingContent == null || streamingContent.length() == 0) {
-            appendStreamingDelta("暂时没有生成回答");
         }
         if (streamingRow != null && !streamingActionsAdded && streamingMessageId != null && !streamingMessageId.isEmpty()) {
             addActionBar(streamingRow, streamingMessageId, streamingContent.toString());
