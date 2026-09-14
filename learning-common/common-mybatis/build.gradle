@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':learning-common:common-core')
+    implementation 'com.baomidou:mybatis-plus-spring-boot3-starter'
+    implementation 'com.baomidou:mybatis-plus-jsqlparser'
+    implementation 'com.mysql:mysql-connector-j'
+}

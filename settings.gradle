@@ -1,0 +1,25 @@
+rootProject.name = 'yincai'
+
+// common modules
+include 'learning-common:common-core'
+include 'learning-common:common-web'
+include 'learning-common:common-security'
+include 'learning-common:common-mybatis'
+include 'learning-common:common-mq'
+include 'learning-common:common-file'
+include 'learning-common:common-ai'
+include 'learning-common:common-observability'
+
+// infrastructure
+include 'learning-gateway'
+
+// business services
+include 'learning-auth-service'
+include 'learning-user-service'
+include 'learning-course-service'
+include 'learning-profile-service'
+include 'learning-resource-service'
+include 'learning-path-service'
+include 'learning-ai-service'
+include 'learning-exam-service'
+include 'learning-notify-service'
