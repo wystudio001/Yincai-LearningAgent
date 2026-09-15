@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.view.ViewGroup;
 
 import androidx.annotation.DrawableRes;
+import com.google.android.material.textfield.TextInputEditText;
 
 import xyz.wystudio.yincai.R;
 
@@ -177,7 +178,11 @@ public final class LineUi {
         if (view instanceof TextView) {
             TextView text = (TextView) view;
             if (!(text instanceof Button)) text.setTextColor(LineTheme.TEXT);
-            if (text instanceof EditText) {
+            if (text instanceof TextInputEditText) {
+                // Material TextInputLayout owns the field background, stroke and padding.
+                text.setTextColor(LineTheme.TEXT);
+                text.setHintTextColor(LineTheme.TEXT_SECONDARY);
+            } else if (text instanceof EditText) {
                 text.setTextColor(LineTheme.TEXT);
                 text.setHintTextColor(LineTheme.TEXT_SECONDARY);
                 text.setBackgroundResource(R.drawable.bg_line_input);

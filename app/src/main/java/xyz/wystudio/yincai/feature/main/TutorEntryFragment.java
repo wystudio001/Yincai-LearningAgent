@@ -57,16 +57,17 @@ import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.TutorApi;
 import xyz.wystudio.yincai.ui.markdown.MarkdownLinkHandler;
 import xyz.wystudio.yincai.ui.markdown.MarkdownView;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
 
 /** LineCode 风格的学生端学习导师工作台。 */
 public final class TutorEntryFragment extends Fragment {
-    private static final int AI_SURFACE = Color.rgb(28, 28, 30);
-    private static final int USER_BLUE = Color.rgb(10, 132, 255);
-    private static final int TEXT = Color.WHITE;
-    private static final int SECONDARY = Color.rgb(142, 142, 147);
-    private static final int TERTIARY = Color.rgb(99, 99, 102);
-    private static final int ACCENT = Color.rgb(48, 209, 88);
-    private static final int DANGER = Color.rgb(248, 81, 73);
+    private static final int AI_SURFACE = LineTheme.AI_BUBBLE;
+    private static final int USER_BLUE = LineTheme.USER_BUBBLE;
+    private static final int TEXT = LineTheme.TEXT;
+    private static final int SECONDARY = LineTheme.TEXT_SECONDARY;
+    private static final int TERTIARY = LineTheme.TEXT_TERTIARY;
+    private static final int ACCENT = LineTheme.ACCENT;
+    private static final int DANGER = LineTheme.DANGER;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService streamExecutor = Executors.newCachedThreadPool();
@@ -98,10 +99,16 @@ public final class TutorEntryFragment extends Fragment {
     private LinearLayout streamingRow;
     private MarkdownView streamingMarkdown;
     private StringBuilder streamingContent;
+    private StringBuilder streamingReasoning;
     private String streamingMessageId;
     private boolean streamingActionsAdded;
     private volatile boolean userStopped;
     private volatile boolean streamFinished;
+    private TextView thinkingPreview;
+    private TextView streamingThinkingContent;
+    private TextView streamingThinkingHeader;
+    private TextView streamingThinkingChevron;
+    private View streamingThinkingBlock;
 
     public static TutorEntryFragment newInstance(String sessionId, String draftMessage) {
         TutorEntryFragment fragment = new TutorEntryFragment();
@@ -256,9 +263,12 @@ public final class TutorEntryFragment extends Fragment {
         streamingRow = null;
         streamingMarkdown = null;
         streamingContent = new StringBuilder();
+        streamingReasoning = new StringBuilder();
         streamingMessageId = null;
         streamingActionsAdded = false;
         streamFinished = false;
+        streamingThinkingContent = null;
+        streamingThinkingHeader = null;
         setWaiting(true);
         Map<String, Object> body = new HashMap<>();
         body.put("content", value);
@@ -324,7 +334,9 @@ public final class TutorEntryFragment extends Fragment {
             if (!call.isCanceled() && !userStopped && !terminalEvent && data.length() > 0) {
                 terminalEvent = processSseEvent(eventType, data.toString());
             }
-            if (!call.isCanceled() && !userStopped && !terminalEvent) mainHandler.post(() -> finishStreamDone(null, null));
+            if (!call.isCanceled() && !userStopped && !terminalEvent) {
+                mainHandler.post(() -> finishStreamDone(null, null, null));
+            }
         } catch (Exception error) {
             if (!call.isCanceled() && !userStopped) {
                 mainHandler.post(() -> finishStreamError("流式连接中断，请稍后重试。"));
@@ -344,10 +356,14 @@ public final class TutorEntryFragment extends Fragment {
             } else if ("delta".equals(type)) {
                 String delta = object.has("delta") ? object.get("delta").getAsString() : "";
                 if (!delta.isEmpty()) mainHandler.post(() -> appendStreamingDelta(delta));
+            } else if ("reasoning".equals(type)) {
+                String delta = object.has("delta") ? object.get("delta").getAsString() : "";
+                if (!delta.isEmpty()) mainHandler.post(() -> appendStreamingReasoning(delta));
             } else if ("done".equals(type)) {
                 String id = object.has("messageId") ? object.get("messageId").getAsString() : null;
                 String content = object.has("content") ? object.get("content").getAsString() : null;
-                mainHandler.post(() -> finishStreamDone(id, content));
+                String reasoning = object.has("reasoning") ? object.get("reasoning").getAsString() : null;
+                mainHandler.post(() -> finishStreamDone(id, content, reasoning));
                 return true;
             } else if ("error".equals(type)) {
                 String message = object.has("message") ? object.get("message").getAsString() : "暂时无法获取回答，请稍后再试。";
@@ -369,8 +385,28 @@ public final class TutorEntryFragment extends Fragment {
         if (scroll != null) scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
     }
 
-    private void finishStreamDone(String messageId, String finalContent) {
+    private void appendStreamingReasoning(String delta) {
+        if (!isAdded() || getView() == null || userStopped) return;
+        if (streamingReasoning == null) streamingReasoning = new StringBuilder();
+        streamingReasoning.append(delta);
+        if (thinkingPreview != null) thinkingPreview.setText(streamingReasoning.toString());
+        if (streamingRow == null) createStreamingBubble();
+        ensureStreamingThinkingBlock();
+        if (streamingThinkingContent != null) streamingThinkingContent.setText(streamingReasoning.toString());
+        if (streamingThinkingHeader != null) streamingThinkingHeader.setText("思考中");
+        if (scroll != null) scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
+    }
+
+    private void finishStreamDone(String messageId, String finalContent, String finalReasoning) {
         if (!isAdded() || getView() == null || userStopped || streamFinished) return;
+        if (finalReasoning != null && !finalReasoning.isEmpty()
+                && (streamingReasoning == null || !finalReasoning.equals(streamingReasoning.toString()))) {
+            if (streamingReasoning == null) streamingReasoning = new StringBuilder();
+            streamingReasoning.setLength(0);
+            streamingReasoning.append(finalReasoning);
+            ensureStreamingThinkingBlock();
+            if (streamingThinkingContent != null) streamingThinkingContent.setText(finalReasoning);
+        }
         boolean hasExistingContent = streamingContent != null && streamingContent.length() > 0;
         boolean emptyFallback = "暂时没有生成回答".equals(finalContent);
         if ((!hasExistingContent && (finalContent == null || finalContent.trim().isEmpty())) || emptyFallback) {
@@ -386,6 +422,9 @@ public final class TutorEntryFragment extends Fragment {
             if (streamingRow == null) createStreamingBubble();
             streamingContent.append(finalContent);
             if (streamingMarkdown != null) streamingMarkdown.setMarkdown(streamingContent.toString());
+        }
+        if (streamingThinkingHeader != null && streamingReasoning != null && streamingReasoning.length() > 0) {
+            streamingThinkingHeader.setText("思考过程");
         }
         if (streamingRow != null && !streamingActionsAdded && streamingMessageId != null && !streamingMessageId.isEmpty()) {
             addActionBar(streamingRow, streamingMessageId, streamingContent.toString());
@@ -421,8 +460,61 @@ public final class TutorEntryFragment extends Fragment {
         streamingMarkdown.setPadding(dp(16), dp(12), dp(16), dp(12));
         streamingMarkdown.setBackground(bubbleBackground(false));
         int maxBubbleWidth = (int) (getResources().getDisplayMetrics().widthPixels * .84f);
+        if (streamingReasoning != null && streamingReasoning.length() > 0) {
+            ensureStreamingThinkingBlock();
+        }
         streamingRow.addView(streamingMarkdown, new LinearLayout.LayoutParams(maxBubbleWidth, -2));
         messages.addView(streamingRow, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    /** Creates the compact, collapsed-by-default LineCode thinking block above the answer. */
+    private void ensureStreamingThinkingBlock() {
+        if (streamingRow == null || streamingThinkingBlock != null
+                || streamingReasoning == null || streamingReasoning.length() == 0) return;
+        LinearLayout block = createThinkingBlock(streamingReasoning.toString(), true);
+        streamingThinkingBlock = block;
+        streamingThinkingHeader = (TextView) block.getTag(R.id.tag_thinking_header);
+        streamingThinkingContent = (TextView) block.getTag(R.id.tag_thinking_content);
+        streamingThinkingChevron = (TextView) block.getTag(R.id.tag_thinking_chevron);
+        streamingRow.addView(block, 0, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    private LinearLayout createThinkingBlock(String reasoning, boolean streaming) {
+        LinearLayout block = new LinearLayout(requireContext());
+        block.setOrientation(LinearLayout.VERTICAL);
+        block.setPadding(dp(16), dp(4), dp(16), dp(4));
+
+        LinearLayout header = new LinearLayout(requireContext());
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setClickable(true);
+        TextView mark = text("✦", 11, TERTIARY, Typeface.NORMAL);
+        header.addView(mark, new LinearLayout.LayoutParams(-2, -2));
+        TextView label = text(streaming ? "思考中" : "思考过程", 12, TERTIARY, Typeface.NORMAL);
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(-2, -2);
+        labelParams.leftMargin = dp(4);
+        header.addView(label, labelParams);
+        TextView chevron = text("›", 18, TERTIARY, Typeface.NORMAL);
+        chevron.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams chevronParams = new LinearLayout.LayoutParams(dp(18), dp(18));
+        chevronParams.leftMargin = dp(3);
+        header.addView(chevron, chevronParams);
+        TextView content = text(reasoning == null ? "" : reasoning, 12, TERTIARY, Typeface.NORMAL);
+        content.setLineSpacing(dp(3), 1f);
+        content.setVisibility(View.GONE);
+        LinearLayout.LayoutParams contentParams = new LinearLayout.LayoutParams(-1, -2);
+        contentParams.topMargin = dp(6);
+
+        header.setOnClickListener(v -> {
+            boolean expanded = content.getVisibility() != View.VISIBLE;
+            content.setVisibility(expanded ? View.VISIBLE : View.GONE);
+            chevron.setText(expanded ? "⌄" : "›");
+        });
+        block.addView(header, new LinearLayout.LayoutParams(-1, -2));
+        block.addView(content, contentParams);
+        block.setTag(R.id.tag_thinking_header, label);
+        block.setTag(R.id.tag_thinking_content, content);
+        block.setTag(R.id.tag_thinking_chevron, chevron);
+        return block;
     }
 
     private void setWaiting(boolean waiting) {
@@ -467,10 +559,10 @@ public final class TutorEntryFragment extends Fragment {
         row.setPadding(dp(4), dp(8), dp(4), dp(12));
         thinkingLabel = text("✦  思考中", 12, TERTIARY, Typeface.NORMAL);
         row.addView(thinkingLabel, new LinearLayout.LayoutParams(-1, -2));
-        TextView preview = text("…", 16, TEXT, Typeface.NORMAL);
+        thinkingPreview = text("…", 16, TEXT, Typeface.NORMAL);
         LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(-2, -2);
         previewParams.topMargin = dp(4);
-        row.addView(preview, previewParams);
+        row.addView(thinkingPreview, previewParams);
         thinkingRow = row;
         messages.addView(row, new LinearLayout.LayoutParams(-1, -2));
         scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
@@ -482,6 +574,7 @@ public final class TutorEntryFragment extends Fragment {
         }
         thinkingRow = null;
         thinkingLabel = null;
+        thinkingPreview = null;
     }
 
     private void loadHistory() {
@@ -492,7 +585,9 @@ public final class TutorEntryFragment extends Fragment {
                 messages.removeAllViews();
                 for (Map<String, Object> row : data) {
                     String role = MapValues.text(row, "role", "assistant");
-                    addBubble(MapValues.text(row, "content", ""), "user".equalsIgnoreCase(role), MapValues.text(row, "id", ""));
+                    addBubble(MapValues.text(row, "content", ""), "user".equalsIgnoreCase(role),
+                            MapValues.text(row, "id", ""), MapValues.text(row, "reasoningContent",
+                                    MapValues.text(row, "reasoning", "")));
                 }
                 state.setText("在线");
             }
@@ -529,7 +624,7 @@ public final class TutorEntryFragment extends Fragment {
         header.addView(close, new LinearLayout.LayoutParams(dp(36), dp(36)));
         drawer.addView(header, new LinearLayout.LayoutParams(-1, dp(48)));
 
-        TextView create = text("＋  新建对话", 15, Color.BLACK, Typeface.BOLD);
+        TextView create = text("＋  新建对话", 15, LineTheme.TEXT_ON_COLOR, Typeface.BOLD);
         create.setGravity(Gravity.CENTER_VERTICAL);
         create.setPadding(dp(14), 0, dp(14), 0);
         create.setBackground(round(ACCENT, 18));
@@ -542,7 +637,7 @@ public final class TutorEntryFragment extends Fragment {
         drawer.addView(create, createParams);
 
         View divider = new View(requireContext());
-        divider.setBackgroundColor(Color.rgb(58, 58, 60));
+        divider.setBackgroundColor(LineTheme.BORDER);
         LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(-1, dp(1));
         dividerParams.topMargin = dp(18);
         drawer.addView(divider, dividerParams);
@@ -564,7 +659,7 @@ public final class TutorEntryFragment extends Fragment {
                 item.setSingleLine(true);
                 item.setEllipsize(android.text.TextUtils.TruncateAt.END);
                 item.setPadding(dp(12), 0, dp(12), 0);
-                item.setBackground(round(id.equals(sessionId) ? Color.rgb(58, 58, 60) : Color.TRANSPARENT, 12));
+                item.setBackground(round(id.equals(sessionId) ? LineTheme.SURFACE_LIGHT : Color.TRANSPARENT, 12));
                 item.setOnClickListener(v -> {
                     conversationDrawer.dismiss();
                     if (conversationTitle != null) conversationTitle.setText(MapValues.text(row, "title", "学习辅导"));
@@ -607,6 +702,10 @@ public final class TutorEntryFragment extends Fragment {
     }
 
     private void addBubble(String value, boolean mine, String messageId) {
+        addBubble(value, mine, messageId, "");
+    }
+
+    private void addBubble(String value, boolean mine, String messageId, String reasoning) {
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.VERTICAL);
         row.setGravity(mine ? Gravity.END : Gravity.START);
@@ -618,6 +717,9 @@ public final class TutorEntryFragment extends Fragment {
             userBubble.setBackground(bubbleBackground(true));
             bubble = userBubble;
         } else {
+            if (reasoning != null && !reasoning.trim().isEmpty()) {
+                row.addView(createThinkingBlock(reasoning, false), new LinearLayout.LayoutParams(-1, -2));
+            }
             MarkdownView markdown = assistantMarkdown();
             markdown.setPadding(dp(16), dp(12), dp(16), dp(12));
             markdown.setBackground(bubbleBackground(false));
