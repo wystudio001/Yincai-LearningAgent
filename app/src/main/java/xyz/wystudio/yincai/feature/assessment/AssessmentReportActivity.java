@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.assessment;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -16,6 +15,8 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.AssessmentApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 /** 学生端阶段性评估报告，报告生成由 Java 后端完成。 */
 public final class AssessmentReportActivity extends AppCompatActivity {
@@ -47,6 +48,7 @@ public final class AssessmentReportActivity extends AppCompatActivity {
         content.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(content);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        LineUi.styleScreen(root);
         setContentView(root);
         api = app.apiClient().create(AssessmentApi.class);
         refresh.setOnClickListener(v -> load());
@@ -93,7 +95,7 @@ public final class AssessmentReportActivity extends AppCompatActivity {
         content.removeAllViews();
         if (data == null || data.isEmpty()) {
             state.setText("还没有评估报告");
-            addText("完成一些练习后，可以生成阶段性学习报告。", Color.rgb(101, 105, 120));
+            addText("完成一些练习后，可以生成阶段性学习报告。", LineTheme.TEXT_SECONDARY);
             return;
         }
         state.setText("最近报告：" + MapValues.text(data, "generatedAt", "刚刚生成"));
@@ -101,20 +103,20 @@ public final class AssessmentReportActivity extends AppCompatActivity {
         addSection("需要加强", MapValues.text(data, "weaknesses", "暂无明确薄弱项"));
         addSection("学习建议", MapValues.text(data, "suggestions", "建议继续完成练习并复盘错题"));
         addSection("分数明细", MapValues.text(data, "scoreDetail", "暂无分数明细"));
-        addText("报告编号：" + MapValues.text(data, "id", "未标注") + "\n类型：" + MapValues.text(data, "reportType", "阶段评估"), Color.rgb(101, 105, 120));
+        addText("报告编号：" + MapValues.text(data, "id", "未标注") + "\n类型：" + MapValues.text(data, "reportType", "阶段评估"), LineTheme.TEXT_SECONDARY);
     }
 
     private void addSection(String heading, String value) {
         TextView section = title(heading);
         section.setTextSize(18);
         content.addView(section);
-        addText(value, Color.rgb(27, 29, 42));
+        addText(value, LineTheme.TEXT);
     }
 
     private void addText(String value, int color) {
         TextView view = body(value);
         view.setTextColor(color);
-        view.setBackgroundColor(Color.WHITE);
+        view.setBackgroundResource(xyz.wystudio.yincai.R.drawable.bg_line_row);
         view.setPadding(14, 14, 14, 14);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, 14);
@@ -124,7 +126,7 @@ public final class AssessmentReportActivity extends AppCompatActivity {
     private TextView title(String value) {
         TextView view = body(value);
         view.setTextSize(23);
-        view.setTextColor(Color.rgb(27, 29, 42));
+        view.setTextColor(LineTheme.TEXT);
         view.setTypeface(null, android.graphics.Typeface.BOLD);
         return view;
     }
@@ -133,7 +135,7 @@ public final class AssessmentReportActivity extends AppCompatActivity {
         TextView view = new TextView(this);
         view.setText(value);
         view.setTextSize(14);
-        view.setTextColor(Color.rgb(101, 105, 120));
+        view.setTextColor(LineTheme.TEXT_SECONDARY);
         view.setPadding(0, 8, 0, 8);
         return view;
     }

@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.exercise;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -17,6 +16,8 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.ExerciseApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 /** 独立展示练习提交后的记录，便于从练习页和通知入口重复查看。 */
 public final class ExerciseResultActivity extends AppCompatActivity {
@@ -48,6 +49,7 @@ public final class ExerciseResultActivity extends AppCompatActivity {
         retry.setVisibility(View.GONE);
         retry.setOnClickListener(v -> load());
         root.addView(retry);
+        LineUi.styleScreen(root);
         setContentView(root);
         api = ((YinCaiApplication) getApplication()).apiClient().create(ExerciseApi.class);
         load();
@@ -61,15 +63,15 @@ public final class ExerciseResultActivity extends AppCompatActivity {
                 content.removeAllViews();
                 if (data == null || data.isEmpty()) {
                     state.setText("暂时没有练习结果");
-                    addText("完成提交后，系统会在这里保留你的作答记录。", Color.rgb(101, 105, 120));
+                    addText("完成提交后，系统会在这里保留你的作答记录。", LineTheme.TEXT_SECONDARY);
                     return;
                 }
                 state.setText("练习已提交");
                 addText("练习编号：" + MapValues.text(data, "exerciseId", exerciseId)
-                        + "\n已记录答案：" + MapValues.text(data, "answerCount", "0") + " 条", Color.rgb(27, 29, 42));
+                        + "\n已记录答案：" + MapValues.text(data, "answerCount", "0") + " 条", LineTheme.TEXT);
                 List<Map<String, Object>> records = MapValues.maps(data, "records");
                 if (records.isEmpty()) {
-                    addText("服务端暂未返回逐题记录。", Color.rgb(101, 105, 120));
+                    addText("服务端暂未返回逐题记录。", LineTheme.TEXT_SECONDARY);
                     return;
                 }
                 addHeading("逐题记录");
@@ -77,7 +79,7 @@ public final class ExerciseResultActivity extends AppCompatActivity {
                 for (Map<String, Object> record : records) {
                     addText(number++ + ". 题目：" + MapValues.text(record, "questionId", "未标注")
                             + "\n回答：" + MapValues.text(record, "answerContent", "未填写")
-                            + "\n提交时间：" + MapValues.text(record, "submittedAt", "未标注"), Color.rgb(27, 29, 42));
+                            + "\n提交时间：" + MapValues.text(record, "submittedAt", "未标注"), LineTheme.TEXT);
                 }
             }
 
@@ -97,7 +99,7 @@ public final class ExerciseResultActivity extends AppCompatActivity {
     private void addText(String value, int color) {
         TextView view = body(value);
         view.setTextColor(color);
-        view.setBackgroundColor(Color.WHITE);
+        view.setBackgroundResource(xyz.wystudio.yincai.R.drawable.bg_line_row);
         view.setPadding(14, 14, 14, 14);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, 10);
@@ -107,7 +109,7 @@ public final class ExerciseResultActivity extends AppCompatActivity {
     private TextView title(String value) {
         TextView view = body(value);
         view.setTextSize(23);
-        view.setTextColor(Color.rgb(27, 29, 42));
+        view.setTextColor(LineTheme.TEXT);
         view.setTypeface(null, android.graphics.Typeface.BOLD);
         return view;
     }
@@ -116,7 +118,7 @@ public final class ExerciseResultActivity extends AppCompatActivity {
         TextView view = new TextView(this);
         view.setText(value);
         view.setTextSize(14);
-        view.setTextColor(Color.rgb(101, 105, 120));
+        view.setTextColor(LineTheme.TEXT_SECONDARY);
         view.setPadding(0, 8, 0, 8);
         return view;
     }

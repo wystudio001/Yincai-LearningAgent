@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.notification;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -14,10 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 import xyz.wystudio.yincai.YinCaiApplication;
+import xyz.wystudio.yincai.R;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.CourseApi;
 import xyz.wystudio.yincai.data.remote.NotificationApi;
+import xyz.wystudio.yincai.ui.theme.LineUi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
 
 public final class NotificationActivity extends AppCompatActivity {
     private LinearLayout list;
@@ -32,13 +34,13 @@ public final class NotificationActivity extends AppCompatActivity {
         TextView title = new TextView(this);
         title.setText("通知中心");
         title.setTextSize(24);
-        title.setTextColor(Color.rgb(27, 29, 42));
+        title.setTextColor(LineTheme.TEXT);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         root.addView(title);
         LinearLayout toolbar = new LinearLayout(this);
         toolbar.setOrientation(LinearLayout.HORIZONTAL);
         state = new TextView(this);
-        state.setTextColor(Color.rgb(101, 105, 120));
+        state.setTextColor(LineTheme.TEXT_SECONDARY);
         toolbar.addView(state, new LinearLayout.LayoutParams(0, -2, 1));
         Button readAll = new Button(this);
         readAll.setText("全部已读");
@@ -50,6 +52,7 @@ public final class NotificationActivity extends AppCompatActivity {
         list.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(list);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        LineUi.styleScreen(root);
         setContentView(root);
         api = ((YinCaiApplication) getApplication()).apiClient().create(NotificationApi.class);
         readAll.setOnClickListener(v -> {
@@ -85,15 +88,16 @@ public final class NotificationActivity extends AppCompatActivity {
         item.setText(MapValues.text(row, "title", "学习提醒") + "\n"
                 + MapValues.text(row, "content", "") + "\n"
                 + ("UNREAD".equalsIgnoreCase(status) ? "未读" : "已读"));
-        item.setTextColor(Color.rgb(27, 29, 42));
-        item.setPadding(14, 18, 14, 18);
-        item.setBackgroundColor("UNREAD".equalsIgnoreCase(status) ? Color.rgb(239, 241, 247) : Color.WHITE);
+        item.setTextColor(LineTheme.TEXT);
+        item.setTextSize(LineTheme.FONT_MD);
+        item.setPadding(LineTheme.dp(this, 16), LineTheme.dp(this, 16), LineTheme.dp(this, 16), LineTheme.dp(this, 16));
+        item.setBackgroundResource(R.drawable.bg_line_row);
         item.setOnClickListener(v -> {
             String id = MapValues.text(row, "id", null);
             if (id == null || !"UNREAD".equalsIgnoreCase(status)) return;
             item.setEnabled(false);
             NetworkCall.enqueue(api.markRead(id), new NetworkCall.Result<Void>() {
-                @Override public void success(Void ignored) { item.setText(item.getText().toString().replace("未读", "已读")); item.setBackgroundColor(Color.WHITE); }
+                @Override public void success(Void ignored) { item.setText(item.getText().toString().replace("未读", "已读")); item.setBackgroundResource(R.drawable.bg_line_row); }
                 @Override public void failure(String message) { item.setEnabled(true); state.setText("标记已读失败：" + message); }
             });
         });

@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.resource;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,6 +18,8 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.GenerationApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 /** 通过任务状态接口轮询生成进度，同时展示步骤和已产出资源。 */
 public final class GenerationProgressActivity extends AppCompatActivity {
@@ -59,6 +60,7 @@ public final class GenerationProgressActivity extends AppCompatActivity {
         content.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(content);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        LineUi.styleScreen(root);
         setContentView(root);
         api = ((YinCaiApplication) getApplication()).apiClient().create(GenerationApi.class);
         cancel.setOnClickListener(v -> changeTask(false));
@@ -88,18 +90,18 @@ public final class GenerationProgressActivity extends AppCompatActivity {
             @Override public void success(List<Map<String, Object>> data) {
                 content.removeAllViews();
                 addHeading("生成步骤");
-                if (data == null || data.isEmpty()) addText("后端尚未返回步骤，任务仍可能正在排队。", Color.rgb(101, 105, 120));
-                else for (Map<String, Object> row : data) addText(MapValues.text(row, "agentCode", "生成器") + " · " + MapValues.text(row, "stepType", "处理") + "\n状态：" + MapValues.text(row, "status", "等待中") + "\n" + MapValues.text(row, "inputSummary", ""), Color.rgb(27, 29, 42));
+                if (data == null || data.isEmpty()) addText("后端尚未返回步骤，任务仍可能正在排队。", LineTheme.TEXT_SECONDARY);
+                else for (Map<String, Object> row : data) addText(MapValues.text(row, "agentCode", "生成器") + " · " + MapValues.text(row, "stepType", "处理") + "\n状态：" + MapValues.text(row, "status", "等待中") + "\n" + MapValues.text(row, "inputSummary", ""), LineTheme.TEXT);
                 NetworkCall.enqueue(api.outputs(taskId), new NetworkCall.Result<List<Map<String, Object>>>() {
                     @Override public void success(List<Map<String, Object>> outputs) {
                         addHeading("已生成资源");
-                        if (outputs == null || outputs.isEmpty()) addText("暂时还没有资源输出。", Color.rgb(101, 105, 120));
+                        if (outputs == null || outputs.isEmpty()) addText("暂时还没有资源输出。", LineTheme.TEXT_SECONDARY);
                         else for (Map<String, Object> row : outputs) addOutput(row);
                     }
-                    @Override public void failure(String message) { addText("输出读取失败：" + message, Color.rgb(180, 60, 60)); }
+                    @Override public void failure(String message) { addText("输出读取失败：" + message, LineTheme.DANGER); }
                 });
             }
-            @Override public void failure(String message) { content.removeAllViews(); addText("步骤读取失败：" + message, Color.rgb(180, 60, 60)); }
+            @Override public void failure(String message) { content.removeAllViews(); addText("步骤读取失败：" + message, LineTheme.DANGER); }
         });
     }
 
@@ -115,15 +117,15 @@ public final class GenerationProgressActivity extends AppCompatActivity {
     private void addOutput(Map<String, Object> row) {
         TextView item = new TextView(this);
         item.setText(MapValues.text(row, "title", "学习资源") + "\n" + MapValues.text(row, "summary", "生成完成，点击查看详情"));
-        item.setTextColor(Color.rgb(27, 29, 42)); item.setPadding(14, 14, 14, 14); item.setBackgroundColor(Color.WHITE);
+        item.setTextColor(LineTheme.TEXT); item.setPadding(LineTheme.dp(this, 14), LineTheme.dp(this, 14), LineTheme.dp(this, 14), LineTheme.dp(this, 14)); item.setBackgroundResource(xyz.wystudio.yincai.R.drawable.bg_line_row);
         item.setOnClickListener(v -> startActivity(new android.content.Intent(this, ResourceDetailActivity.class).putExtra("resourceId", MapValues.text(row, "id", ""))));
         content.addView(item, marginParams());
     }
-    private void addHeading(String text) { TextView heading = body(text); heading.setTextSize(18); heading.setTextColor(Color.rgb(27, 29, 42)); heading.setTypeface(null, android.graphics.Typeface.BOLD); content.addView(heading); }
-    private void addText(String text, int color) { TextView view = body(text); view.setTextColor(color); view.setPadding(14, 12, 14, 12); content.addView(view, marginParams()); }
+    private void addHeading(String text) { TextView heading = body(text); heading.setTextSize(LineTheme.FONT_LG); heading.setTextColor(LineTheme.TEXT); heading.setTypeface(null, android.graphics.Typeface.BOLD); content.addView(heading); }
+    private void addText(String text, int color) { TextView view = body(text); view.setTextColor(color); view.setPadding(LineTheme.dp(this, 14), LineTheme.dp(this, 12), LineTheme.dp(this, 14), LineTheme.dp(this, 12)); view.setBackgroundResource(xyz.wystudio.yincai.R.drawable.bg_line_row); content.addView(view, marginParams()); }
     private LinearLayout.LayoutParams marginParams() { LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2); lp.setMargins(0, 0, 0, 10); return lp; }
-    private TextView title(String value) { TextView view = body(value); view.setTextSize(24); view.setTextColor(Color.rgb(27, 29, 42)); view.setTypeface(null, android.graphics.Typeface.BOLD); return view; }
-    private TextView body(String value) { TextView view = new TextView(this); view.setText(value); view.setTextSize(14); view.setTextColor(Color.rgb(101, 105, 120)); view.setPadding(0, 8, 0, 8); return view; }
+    private TextView title(String value) { TextView view = body(value); view.setTextSize(LineTheme.FONT_XL); view.setTextColor(LineTheme.TEXT); view.setTypeface(null, android.graphics.Typeface.BOLD); return view; }
+    private TextView body(String value) { TextView view = new TextView(this); view.setText(value); view.setTextSize(LineTheme.FONT_SM); view.setTextColor(LineTheme.TEXT_SECONDARY); view.setPadding(0, LineTheme.dp(this, 8), 0, LineTheme.dp(this, 8)); return view; }
     private Button action(String value) { Button button = new Button(this); button.setText(value); button.setAllCaps(false); return button; }
     @Override protected void onDestroy() { handler.removeCallbacksAndMessages(null); super.onDestroy(); }
 }

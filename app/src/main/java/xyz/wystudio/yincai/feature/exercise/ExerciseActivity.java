@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.exercise;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -23,6 +22,8 @@ import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.CourseApi;
 import xyz.wystudio.yincai.data.remote.ExerciseApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 /** 学生练习的最小闭环：查看、开始、作答、提交和查看结果。 */
 public final class ExerciseActivity extends AppCompatActivity {
@@ -50,17 +51,17 @@ public final class ExerciseActivity extends AppCompatActivity {
         root.setPadding(20, 20, 20, 20);
         TextView title = new TextView(this);
         title.setText("练习");
-        title.setTextSize(24);
-        title.setTextColor(Color.rgb(27, 29, 42));
+        title.setTextSize(LineTheme.FONT_XL);
+        title.setTextColor(LineTheme.TEXT);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         root.addView(title);
         summary = new TextView(this);
         summary.setText("正在读取练习...");
-        summary.setTextColor(Color.rgb(101, 105, 120));
-        summary.setPadding(0, 8, 0, 8);
+        summary.setTextColor(LineTheme.TEXT_SECONDARY);
+        summary.setPadding(0, LineTheme.dp(this, 8), 0, LineTheme.dp(this, 8));
         root.addView(summary);
         state = new TextView(this);
-        state.setTextColor(Color.rgb(101, 105, 120));
+        state.setTextColor(LineTheme.TEXT_SECONDARY);
         root.addView(state);
 
         ScrollView scroll = new ScrollView(this);
@@ -77,6 +78,7 @@ public final class ExerciseActivity extends AppCompatActivity {
         root.addView(start);
         root.addView(submitAnswers);
         root.addView(finish);
+        LineUi.styleScreen(root);
         setContentView(root);
 
         ExerciseApi api = ((YinCaiApplication) getApplication()).apiClient().create(ExerciseApi.class);
@@ -158,20 +160,26 @@ public final class ExerciseActivity extends AppCompatActivity {
     private void addQuestion(int number, Map<String, Object> row) {
         TextView prompt = new TextView(this);
         prompt.setText(number + ". " + MapValues.text(row, "title", MapValues.text(row, "content", "未命名题目")));
-        prompt.setTextColor(Color.rgb(27, 29, 42));
-        prompt.setTextSize(16);
+        prompt.setTextColor(LineTheme.TEXT);
+        prompt.setTextSize(LineTheme.FONT_LG);
         prompt.setTypeface(null, android.graphics.Typeface.BOLD);
-        prompt.setPadding(0, 14, 0, 6);
+        prompt.setPadding(0, LineTheme.dp(this, 14), 0, LineTheme.dp(this, 6));
         questions.addView(prompt);
         String options = MapValues.text(row, "options", "");
         if (!options.isEmpty()) {
             TextView optionText = new TextView(this);
             optionText.setText(options);
-            optionText.setTextColor(Color.rgb(101, 105, 120));
+            optionText.setTextColor(LineTheme.TEXT_SECONDARY);
+            optionText.setTextSize(LineTheme.FONT_SM);
+            optionText.setPadding(LineTheme.dp(this, 0), LineTheme.dp(this, 4), LineTheme.dp(this, 0), LineTheme.dp(this, 8));
             questions.addView(optionText);
         }
         EditText answer = new EditText(this);
         answer.setHint("填写你的答案");
+        answer.setTextColor(LineTheme.TEXT);
+        answer.setHintTextColor(LineTheme.TEXT_SECONDARY);
+        answer.setBackgroundResource(xyz.wystudio.yincai.R.drawable.bg_line_input);
+        answer.setPadding(LineTheme.dp(this, 12), LineTheme.dp(this, 10), LineTheme.dp(this, 12), LineTheme.dp(this, 10));
         answer.setMinLines(2);
         answer.setGravity(android.view.Gravity.TOP);
         questions.addView(answer);
@@ -228,8 +236,8 @@ public final class ExerciseActivity extends AppCompatActivity {
     private void addMessage(String message) {
         TextView view = new TextView(this);
         view.setText(message);
-        view.setTextColor(Color.rgb(101, 105, 120));
-        view.setPadding(0, 18, 0, 18);
+        view.setTextColor(LineTheme.TEXT_SECONDARY);
+        view.setPadding(0, LineTheme.dp(this, 18), 0, LineTheme.dp(this, 18));
         questions.addView(view);
     }
 }

@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.resource;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Html;
 import android.widget.LinearLayout;
@@ -15,6 +14,8 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.ResourceApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 /** 文本和 Markdown 资源的轻量阅读器，复杂文件交给系统或下载地址打开。 */
 public final class ResourceReaderActivity extends AppCompatActivity {
@@ -27,12 +28,13 @@ public final class ResourceReaderActivity extends AppCompatActivity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(20, 20, 20, 20);
         TextView title = new TextView(this);
-        title.setText("资源阅读"); title.setTextSize(24); title.setTextColor(Color.rgb(27, 29, 42)); title.setTypeface(null, android.graphics.Typeface.BOLD);
+        title.setText("资源阅读"); title.setTextSize(LineTheme.FONT_XL); title.setTextColor(LineTheme.TEXT); title.setTypeface(null, android.graphics.Typeface.BOLD);
         root.addView(title);
-        state = new TextView(this); state.setText("正在准备内容..."); state.setTextColor(Color.rgb(101, 105, 120)); root.addView(state);
+        state = new TextView(this); state.setText("正在准备内容..."); state.setTextColor(LineTheme.TEXT_SECONDARY); root.addView(state);
         ScrollView scroll = new ScrollView(this);
-        TextView content = new TextView(this); content.setTextSize(16); content.setTextColor(Color.rgb(27, 29, 42)); content.setTextIsSelectable(true); content.setPadding(0, 16, 0, 16);
+        TextView content = new TextView(this); content.setTextSize(LineTheme.FONT_MD); content.setTextColor(LineTheme.TEXT); content.setTextIsSelectable(true); content.setPadding(0, LineTheme.dp(this, 16), 0, LineTheme.dp(this, 16));
         scroll.addView(content); root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        LineUi.styleScreen(root);
         setContentView(root);
         if (resourceId == null || resourceId.trim().isEmpty()) { state.setText("资源信息不完整"); return; }
         ResourceApi api = ((YinCaiApplication) getApplication()).apiClient().create(ResourceApi.class);

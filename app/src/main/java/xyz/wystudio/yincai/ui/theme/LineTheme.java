@@ -11,7 +11,9 @@ import android.widget.TextView;
 
 /** Markdown 组件使用的 LineCode 视觉令牌。 */
 public final class LineTheme {
+    public static final int BG = Color.BLACK;
     public static final int SURFACE = Color.parseColor("#0A0A0A");
+    public static final int SURFACE_ELEVATED = Color.parseColor("#141414");
     public static final int SURFACE_LIGHT = Color.parseColor("#1C1C1E");
     public static final int ACCENT = Color.parseColor("#30D158");
     public static final int USER_BUBBLE = Color.parseColor("#0A84FF");
@@ -20,8 +22,11 @@ public final class LineTheme {
     public static final int TEXT_SECONDARY = Color.parseColor("#8E8E93");
     public static final int TEXT_TERTIARY = Color.parseColor("#636366");
     public static final int BORDER_LIGHT = Color.parseColor("#2C2C2E");
+    public static final int BORDER = Color.parseColor("#1C1C1E");
+    public static final int INPUT_BG = Color.parseColor("#1C1C1E");
     public static final int CODE_BG = Color.parseColor("#151515");
     public static final int CODE_BORDER = Color.parseColor("#2C2C2E");
+    public static final int DANGER = Color.parseColor("#F85149");
 
     public static final int SM = 8;
     public static final int MD = 12;

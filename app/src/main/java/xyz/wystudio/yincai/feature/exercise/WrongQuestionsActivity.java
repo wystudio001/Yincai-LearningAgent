@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.exercise;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -17,6 +16,8 @@ import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.CourseApi;
 import xyz.wystudio.yincai.data.remote.ExerciseApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 /** 学生错题本，支持从服务端加载并标记题目已复习。 */
 public final class WrongQuestionsActivity extends AppCompatActivity {
@@ -37,6 +38,7 @@ public final class WrongQuestionsActivity extends AppCompatActivity {
         list.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(list);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        LineUi.styleScreen(root);
         setContentView(root);
         api = ((YinCaiApplication) getApplication()).apiClient().create(ExerciseApi.class);
         load();
@@ -62,12 +64,12 @@ public final class WrongQuestionsActivity extends AppCompatActivity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(14, 14, 14, 14);
-        box.setBackgroundColor(Color.WHITE);
+        box.setBackgroundResource(xyz.wystudio.yincai.R.drawable.bg_line_row);
         TextView text = body("题目编号：" + MapValues.text(row, "questionId", "未标注")
                 + "\n练习编号：" + MapValues.text(row, "exerciseId", "未标注")
                 + "\n错误次数：" + MapValues.text(row, "wrongCount", "1")
                 + "\n最近错误：" + MapValues.text(row, "lastWrongAt", "未标注"));
-        text.setTextColor(Color.rgb(27, 29, 42));
+        text.setTextColor(LineTheme.TEXT);
         box.addView(text);
         Button reviewed = new Button(this);
         boolean done = "true".equalsIgnoreCase(MapValues.text(row, "reviewStatus", "false"));
@@ -92,7 +94,7 @@ public final class WrongQuestionsActivity extends AppCompatActivity {
     private TextView title(String value) {
         TextView view = body(value);
         view.setTextSize(23);
-        view.setTextColor(Color.rgb(27, 29, 42));
+        view.setTextColor(LineTheme.TEXT);
         view.setTypeface(null, android.graphics.Typeface.BOLD);
         return view;
     }
@@ -101,7 +103,7 @@ public final class WrongQuestionsActivity extends AppCompatActivity {
         TextView view = new TextView(this);
         view.setText(value);
         view.setTextSize(14);
-        view.setTextColor(Color.rgb(101, 105, 120));
+        view.setTextColor(LineTheme.TEXT_SECONDARY);
         view.setPadding(0, 8, 0, 8);
         return view;
     }

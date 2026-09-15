@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.resource;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,6 +15,8 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.GenerationApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 /** 发起个性化资源生成任务。任务内容由 Java 后端调度，不在客户端保存模型配置。 */
 public final class ResourceGenerationActivity extends AppCompatActivity {
@@ -47,6 +48,7 @@ public final class ResourceGenerationActivity extends AppCompatActivity {
         create = action("开始生成");
         create.setOnClickListener(v -> submit());
         root.addView(create);
+        LineUi.styleScreen(root);
         setContentView(root);
         api = ((YinCaiApplication) getApplication()).apiClient().create(GenerationApi.class);
     }
@@ -82,8 +84,8 @@ public final class ResourceGenerationActivity extends AppCompatActivity {
         catch (NumberFormatException ignored) { state.setText("请输入有效的 " + key); return false; }
     }
 
-    private EditText input(String hint) { EditText input = new EditText(this); input.setHint(hint); input.setSingleLine(true); input.setPadding(0, 10, 0, 10); return input; }
-    private TextView title(String value) { TextView view = body(value); view.setTextSize(24); view.setTextColor(Color.rgb(27, 29, 42)); view.setTypeface(null, android.graphics.Typeface.BOLD); return view; }
-    private TextView body(String value) { TextView view = new TextView(this); view.setText(value); view.setTextSize(14); view.setTextColor(Color.rgb(101, 105, 120)); view.setPadding(0, 8, 0, 8); return view; }
+    private EditText input(String hint) { EditText input = new EditText(this); input.setHint(hint); input.setSingleLine(true); input.setTextColor(LineTheme.TEXT); input.setHintTextColor(LineTheme.TEXT_SECONDARY); input.setBackgroundResource(xyz.wystudio.yincai.R.drawable.bg_line_input); input.setPadding(LineTheme.dp(this, 12), LineTheme.dp(this, 10), LineTheme.dp(this, 12), LineTheme.dp(this, 10)); return input; }
+    private TextView title(String value) { TextView view = body(value); view.setTextSize(LineTheme.FONT_XL); view.setTextColor(LineTheme.TEXT); view.setTypeface(null, android.graphics.Typeface.BOLD); return view; }
+    private TextView body(String value) { TextView view = new TextView(this); view.setText(value); view.setTextSize(LineTheme.FONT_SM); view.setTextColor(LineTheme.TEXT_SECONDARY); view.setPadding(0, LineTheme.dp(this, 8), 0, LineTheme.dp(this, 8)); return view; }
     private Button action(String value) { Button button = new Button(this); button.setText(value); button.setAllCaps(false); return button; }
 }

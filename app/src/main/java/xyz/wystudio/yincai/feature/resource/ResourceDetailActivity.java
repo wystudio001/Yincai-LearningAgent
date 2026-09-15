@@ -1,7 +1,6 @@
 package xyz.wystudio.yincai.feature.resource;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
@@ -18,6 +17,8 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.ResourceApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 public final class ResourceDetailActivity extends AppCompatActivity {
     private TextView state;
@@ -38,13 +39,13 @@ public final class ResourceDetailActivity extends AppCompatActivity {
         TextView title = new TextView(this);
         title.setText("资源详情");
         title.setTextSize(24);
-        title.setTextColor(Color.rgb(27, 29, 42));
+        title.setTextColor(LineTheme.TEXT);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         root.addView(title);
         state = new TextView(this);
         state.setText("正在读取资源...");
         state.setTextSize(16);
-        state.setTextColor(Color.rgb(101, 105, 120));
+        state.setTextColor(LineTheme.TEXT_SECONDARY);
         state.setPadding(0, 16, 0, 16);
         root.addView(state);
         Button favorite = new Button(this);
@@ -63,6 +64,7 @@ public final class ResourceDetailActivity extends AppCompatActivity {
         feedback.setText("反馈这份资源");
         feedback.setAllCaps(false);
         root.addView(feedback);
+        LineUi.styleScreen(root);
         setContentView(root);
 
         ResourceApi api = ((YinCaiApplication) getApplication()).apiClient().create(ResourceApi.class);
@@ -102,6 +104,9 @@ public final class ResourceDetailActivity extends AppCompatActivity {
     private void submitFeedback(ResourceApi api) {
         EditText comment = new EditText(this);
         comment.setHint("写下你的建议（可选）");
+        comment.setTextColor(LineTheme.TEXT);
+        comment.setHintTextColor(LineTheme.TEXT_SECONDARY);
+        comment.setBackgroundResource(xyz.wystudio.yincai.R.drawable.bg_line_input);
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("资源反馈")
                 .setView(comment)

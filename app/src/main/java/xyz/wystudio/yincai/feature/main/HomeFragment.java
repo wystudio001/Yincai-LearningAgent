@@ -17,6 +17,7 @@ import xyz.wystudio.yincai.data.remote.LearningPathApi;
 import xyz.wystudio.yincai.data.remote.ProfileApi;
 import xyz.wystudio.yincai.feature.profile.ProfileDialogueActivity;
 import xyz.wystudio.yincai.feature.resource.ResourceGenerationActivity;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 public class HomeFragment extends Fragment {
     private TextView greeting, profile, profileHint, path, pathHint;
@@ -24,6 +25,7 @@ public class HomeFragment extends Fragment {
     private YinCaiApplication app;
     @Nullable @Override public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
+        LineUi.styleScreen(view);
         app = (YinCaiApplication) requireActivity().getApplication();
         greeting = view.findViewById(R.id.text_home_greeting); profile = view.findViewById(R.id.text_home_profile); profileHint = view.findViewById(R.id.text_home_profile_hint); path = view.findViewById(R.id.text_home_path); pathHint = view.findViewById(R.id.text_home_path_hint); retry = view.findViewById(R.id.button_home_retry);
         String name = app.sessionManager().getUsername(); greeting.setText(name == null ? "你好，开始今天的学习" : "你好，" + name);

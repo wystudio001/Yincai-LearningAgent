@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.profile;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.widget.Button;
@@ -19,6 +18,8 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.ProfileApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 /** 用轻量聊天流完成学生画像建档，画像抽取仍由 Java 后端负责。 */
 public final class ProfileDialogueActivity extends AppCompatActivity {
@@ -56,6 +57,7 @@ public final class ProfileDialogueActivity extends AppCompatActivity {
         Button init = action("生成我的学习画像");
         init.setOnClickListener(v -> initialize(init));
         root.addView(init);
+        LineUi.styleScreen(root);
         setContentView(root);
 
         api = ((YinCaiApplication) getApplication()).apiClient().create(ProfileApi.class);
@@ -120,15 +122,15 @@ public final class ProfileDialogueActivity extends AppCompatActivity {
         TextView bubble = new TextView(this);
         bubble.setText(text);
         bubble.setTextSize(15);
-        bubble.setTextColor(mine ? Color.WHITE : Color.rgb(27, 29, 42));
-        bubble.setBackgroundColor(mine ? Color.rgb(74, 91, 213) : Color.rgb(239, 241, 247));
-        bubble.setPadding(14, 12, 14, 12);
+        bubble.setTextColor(mine ? LineTheme.TEXT : LineTheme.TEXT);
+        bubble.setBackground(LineTheme.rounded(this, mine ? LineTheme.USER_BUBBLE : LineTheme.AI_BUBBLE, 16));
+        bubble.setPadding(LineTheme.dp(this, 14), LineTheme.dp(this, 12), LineTheme.dp(this, 14), LineTheme.dp(this, 12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(mine ? 48 : 0, 0, mine ? 0 : 48, 10);
         messages.addView(bubble, lp);
     }
 
-    private TextView title(String value) { TextView view = body(value); view.setTextSize(22); view.setTextColor(Color.rgb(27, 29, 42)); view.setTypeface(null, android.graphics.Typeface.BOLD); return view; }
-    private TextView body(String value) { TextView view = new TextView(this); view.setText(value); view.setTextSize(14); view.setTextColor(Color.rgb(101, 105, 120)); view.setPadding(0, 8, 0, 8); return view; }
+    private TextView title(String value) { TextView view = body(value); view.setTextSize(LineTheme.FONT_XL); view.setTextColor(LineTheme.TEXT); view.setTypeface(null, android.graphics.Typeface.BOLD); return view; }
+    private TextView body(String value) { TextView view = new TextView(this); view.setText(value); view.setTextSize(LineTheme.FONT_SM); view.setTextColor(LineTheme.TEXT_SECONDARY); view.setPadding(0, LineTheme.dp(this, 8), 0, LineTheme.dp(this, 8)); return view; }
     private Button action(String value) { Button button = new Button(this); button.setText(value); button.setAllCaps(false); return button; }
 }

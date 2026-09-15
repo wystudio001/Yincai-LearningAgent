@@ -24,6 +24,7 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.UiState;
 import xyz.wystudio.yincai.data.repository.AuthRepository;
 import xyz.wystudio.yincai.feature.main.MainActivity;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 public final class AuthActivity extends AppCompatActivity {
     private EditText usernameInput;
@@ -35,6 +36,7 @@ public final class AuthActivity extends AppCompatActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_auth);
+        LineUi.styleScreen(findViewById(android.R.id.content));
         usernameInput = findViewById(R.id.input_username);
         passwordInput = findViewById(R.id.input_password);
         loginButton = findViewById(R.id.button_login);

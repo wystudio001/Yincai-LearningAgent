@@ -1,6 +1,5 @@
 package xyz.wystudio.yincai.feature.learningpath;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -16,6 +15,8 @@ import xyz.wystudio.yincai.YinCaiApplication;
 import xyz.wystudio.yincai.core.common.MapValues;
 import xyz.wystudio.yincai.core.network.NetworkCall;
 import xyz.wystudio.yincai.data.remote.LearningPathApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
 
 public final class LearningNodeDetailActivity extends AppCompatActivity {
     private TextView state;
@@ -37,18 +38,19 @@ public final class LearningNodeDetailActivity extends AppCompatActivity {
         TextView title = new TextView(this);
         title.setText(getIntent().getStringExtra("target") == null ? "学习节点" : getIntent().getStringExtra("target"));
         title.setTextSize(22);
-        title.setTextColor(Color.rgb(27, 29, 42));
+        title.setTextColor(LineTheme.TEXT);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         root.addView(title);
         state = new TextView(this);
         state.setText("查看节点学习要求并更新完成状态");
-        state.setTextColor(Color.rgb(101, 105, 120));
+        state.setTextColor(LineTheme.TEXT_SECONDARY);
         state.setPadding(0, 12, 0, 18);
         root.addView(state);
         complete = action("标记为已完成");
         skip = action("暂时跳过");
         root.addView(complete);
         root.addView(skip);
+        LineUi.styleScreen(root);
         setContentView(root);
 
         String initialStatus = getIntent().getStringExtra("status");

@@ -1,4 +1,45 @@
 package xyz.wystudio.yincai.feature.profile;
-import android.graphics.Color; import android.os.Bundle; import android.widget.*; import androidx.appcompat.app.AppCompatActivity; import java.util.Map; import xyz.wystudio.yincai.YinCaiApplication; import xyz.wystudio.yincai.core.network.NetworkCall; import xyz.wystudio.yincai.data.remote.ProfileApi;
-public final class ProfileActivity extends AppCompatActivity { private TextView state; @Override protected void onCreate(Bundle b){super.onCreate(b); LinearLayout r=new LinearLayout(this);r.setOrientation(LinearLayout.VERTICAL);r.setPadding(20,20,20,20);TextView t=new TextView(this);t.setText("学习画像");t.setTextSize(24);t.setTypeface(null, android.graphics.Typeface.BOLD);r.addView(t);state=new TextView(this);state.setText("正在读取画像...");state.setTextSize(15);state.setPadding(0,20,0,20);r.addView(state);setContentView(r);String id=((YinCaiApplication)getApplication()).sessionManager().getUserId();NetworkCall.enqueue(((YinCaiApplication)getApplication()).apiClient().create(ProfileApi.class).current(id),new NetworkCall.Result<Map<String,Object>>(){public void success(Map<String,Object>d){state.setText(d==null||d.isEmpty()?"还没有学习画像，继续学习后系统会逐步建立。":"你的学习画像已建立，系统会据此调整资源和路径推荐。\n\n画像详情：\n"+d); }public void failure(String m){state.setTextColor(Color.rgb(180,60,60));state.setText("画像暂时无法读取："+m);}});}}
 
+import android.os.Bundle;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Map;
+
+import xyz.wystudio.yincai.YinCaiApplication;
+import xyz.wystudio.yincai.core.network.NetworkCall;
+import xyz.wystudio.yincai.data.remote.ProfileApi;
+import xyz.wystudio.yincai.ui.theme.LineTheme;
+import xyz.wystudio.yincai.ui.theme.LineUi;
+
+public final class ProfileActivity extends AppCompatActivity {
+    private TextView state;
+
+    @Override protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        LinearLayout root = LineUi.page(this);
+        root.addView(LineUi.toolbar(this, "学习画像", v -> finish()));
+        root.addView(LineUi.divider(this));
+        state = LineUi.text(this, "正在读取画像...", LineTheme.FONT_MD, LineTheme.TEXT_SECONDARY, android.graphics.Typeface.NORMAL);
+        state.setPadding(LineTheme.dp(this, 20), LineTheme.dp(this, 20), LineTheme.dp(this, 20), LineTheme.dp(this, 20));
+        root.addView(state);
+        setContentView(root);
+
+        YinCaiApplication app = (YinCaiApplication) getApplication();
+        String id = app.sessionManager().getUserId();
+        NetworkCall.enqueue(app.apiClient().create(ProfileApi.class).current(id),
+                new NetworkCall.Result<Map<String, Object>>() {
+                    @Override public void success(Map<String, Object> data) {
+                        state.setText(data == null || data.isEmpty()
+                                ? "还没有学习画像，继续学习后系统会逐步建立。"
+                                : "你的学习画像已建立，系统会据此调整资源和路径推荐。\n\n画像详情：\n" + data);
+                    }
+                    @Override public void failure(String message) {
+                        state.setTextColor(LineTheme.DANGER);
+                        state.setText("画像暂时无法读取：" + message);
+                    }
+                });
+    }
+}
