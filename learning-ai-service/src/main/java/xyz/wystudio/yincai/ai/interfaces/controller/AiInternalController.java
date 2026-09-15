@@ -69,15 +69,9 @@ public class AiInternalController {
         return R.ok(aiApplicationService.tutorAnswer(request));
     }
 
-    /** Compatibility mapping for internal clients that request SSE on the original path. */
-    @PostMapping(value = "/tutor/answer", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter tutorAnswerStreamCompat(@RequestBody Map<String, Object> request) {
-        return stream((onDelta, cancelled) -> aiApplicationService.tutorAnswerStream(request, onDelta, cancelled));
-    }
-
     @PostMapping(value = "/tutor/answer/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter tutorAnswerStream(@RequestBody Map<String, Object> request) {
-        return stream((onDelta, cancelled) -> aiApplicationService.tutorAnswerStream(request, onDelta, cancelled));
+        return stream((onDelta, onReasoning, cancelled) -> aiApplicationService.tutorAnswerStream(request, onDelta, onReasoning, cancelled));
     }
 
     @PostMapping("/assessment/analyze")
@@ -107,7 +101,7 @@ public class AiInternalController {
 
     @PostMapping(value = "/llm/chat-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter llmChatStream(@RequestBody Map<String, Object> request) {
-        return stream((onDelta, cancelled) -> aiApplicationService.llmChatStream(request, onDelta, cancelled));
+        return stream((onDelta, onReasoning, cancelled) -> aiApplicationService.llmChatStream(request, onDelta, onReasoning, cancelled));
     }
 
     /** Keep the old full-text response for legacy callers. */
@@ -142,6 +136,7 @@ public class AiInternalController {
 
         CompletableFuture.runAsync(() -> {
             StringBuilder content = new StringBuilder();
+            StringBuilder reasoning = new StringBuilder();
             try {
                 runner.run(delta -> {
                     if (cancelled.get() || delta == null || delta.isEmpty()) return;
@@ -151,10 +146,21 @@ public class AiInternalController {
                     } catch (Exception error) {
                         cancelled.set(true);
                     }
+                }, delta -> {
+                    if (cancelled.get() || delta == null || delta.isEmpty()) return;
+                    reasoning.append(delta);
+                    try {
+                        emitter.send(SseEmitter.event().name("reasoning").data(Map.of("delta", delta)));
+                    } catch (Exception error) {
+                        cancelled.set(true);
+                    }
                 }, cancelled::get);
                 if (!cancelled.get()) {
                     String result = content.toString();
-                    emitter.send(SseEmitter.event().name("done").data(Map.of("content", result)));
+                    Map<String, Object> payload = new LinkedHashMap<>();
+                    payload.put("content", result);
+                    payload.put("reasoning", reasoning.toString());
+                    emitter.send(SseEmitter.event().name("done").data(payload));
                 }
             } catch (Exception error) {
                 if (!cancelled.get()) {
@@ -175,6 +181,6 @@ public class AiInternalController {
 
     @FunctionalInterface
     private interface StreamRunner {
-        void run(Consumer<String> onDelta, BooleanSupplier cancelled);
+        void run(Consumer<String> onDelta, Consumer<String> onReasoning, BooleanSupplier cancelled);
     }
 }

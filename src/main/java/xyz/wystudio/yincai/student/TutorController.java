@@ -84,13 +84,6 @@ public class TutorController {
         return R.ok(result);
     }
 
-    /** Compatibility mapping for clients that request SSE on the original messages path. */
-    @PostMapping(value = "/sessions/{sessionId}/messages", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter sendMessageStreamCompat(@PathVariable String sessionId,
-                                               @RequestBody Map<String, Object> body) {
-        return sendMessageStream(sessionId, body);
-    }
-
     /** Forward upstream model deltas to the student client as SSE events. */
     @PostMapping(value = "/sessions/{sessionId}/messages/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter sendMessageStream(@PathVariable String sessionId,
@@ -107,6 +100,8 @@ public class TutorController {
         String assistantId = UUID.randomUUID().toString();
         session.messages.add(Map.of("id", UUID.randomUUID().toString(), "role", "user", "content", content));
         session.updatedAt = LocalDateTime.now();
+        // 与 LineCode 一样，在发送前冻结本轮上下文，避免并发请求把后续消息混入当前模型调用。
+        List<Map<String, Object>> contextSnapshot = session.snapshotMessages();
 
         SseEmitter emitter = new SseEmitter(0L);
         AtomicBoolean cancelled = new AtomicBoolean(false);
@@ -130,14 +125,23 @@ public class TutorController {
 
         CompletableFuture.runAsync(() -> {
             StringBuilder reply = new StringBuilder();
+            StringBuilder reasoning = new StringBuilder();
             try {
                 Map<String, Object> request = new LinkedHashMap<>();
-                request.put("messages", session.snapshotMessages());
+                request.put("messages", contextSnapshot);
                 aiApplicationService.tutorAnswerStream(request, delta -> {
                     if (cancelled.get() || delta == null || delta.isEmpty()) return;
                     reply.append(delta);
                     try {
                         emitter.send(SseEmitter.event().name("delta").data(Map.of("delta", delta)));
+                    } catch (Exception sendError) {
+                        cancelled.set(true);
+                    }
+                }, delta -> {
+                    if (cancelled.get() || delta == null || delta.isEmpty()) return;
+                    reasoning.append(delta);
+                    try {
+                        emitter.send(SseEmitter.event().name("reasoning").data(Map.of("delta", delta)));
                     } catch (Exception sendError) {
                         cancelled.set(true);
                     }
@@ -150,12 +154,14 @@ public class TutorController {
                                 "大模型返回为空，请检查模型配置或稍后重试");
                     }
                     String finalReply = reply.toString();
-                    saveAssistant(session, assistantId, finalReply);
+                    saveAssistant(session, assistantId, finalReply, reasoning.toString());
                     assistantSaved.set(true);
-                    emitter.send(SseEmitter.event().name("done").data(Map.of(
-                            "messageId", assistantId,
-                            "content", finalReply,
-                            "answer", finalReply)));
+                    Map<String, Object> done = new LinkedHashMap<>();
+                    done.put("messageId", assistantId);
+                    done.put("content", finalReply);
+                    done.put("answer", finalReply);
+                    done.put("reasoning", reasoning.toString());
+                    emitter.send(SseEmitter.event().name("done").data(done));
                 }
             } catch (Exception error) {
                 if (!cancelled.get()) {
@@ -168,7 +174,7 @@ public class TutorController {
                 }
             } finally {
                 if (reply.length() > 0 && assistantSaved.compareAndSet(false, true)) {
-                    saveAssistant(session, assistantId, reply.toString());
+                    saveAssistant(session, assistantId, reply.toString(), reasoning.toString());
                 }
                 if (!cancelled.get()) {
                     emitter.complete();
@@ -222,8 +228,13 @@ public class TutorController {
         return value.isEmpty() ? fallback : value;
     }
 
-    private void saveAssistant(TutorSession session, String messageId, String content) {
-        session.messages.add(Map.of("id", messageId, "role", "assistant", "content", content));
+    private void saveAssistant(TutorSession session, String messageId, String content, String reasoning) {
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("id", messageId);
+        message.put("role", "assistant");
+        message.put("content", content == null ? "" : content);
+        message.put("reasoningContent", reasoning == null ? "" : reasoning);
+        session.messages.add(message);
         session.updatedAt = LocalDateTime.now();
     }
 

@@ -113,14 +113,32 @@ public class AiApplicationService {
             Consumer<String> onDelta,
             BooleanSupplier cancelled
     ) {
+        llmChatStream(request, onDelta, ignored -> { }, cancelled);
+    }
+
+    public void llmChatStream(
+            Map<String, Object> request,
+            Consumer<String> onDelta,
+            Consumer<String> onReasoning,
+            BooleanSupplier cancelled
+    ) {
         log.info("LLM chat stream callback with request: {}", request);
         AiModelProviderEntity provider = modelProviderApplicationService.resolveProvider(request);
-        openAiCompatibleClient.chatStream(provider, request, onDelta, cancelled);
+        openAiCompatibleClient.chatStream(provider, request, onDelta, onReasoning, cancelled);
     }
 
     public void tutorAnswerStream(
             Map<String, Object> request,
             Consumer<String> onDelta,
+            BooleanSupplier cancelled
+    ) {
+        tutorAnswerStream(request, onDelta, ignored -> { }, cancelled);
+    }
+
+    public void tutorAnswerStream(
+            Map<String, Object> request,
+            Consumer<String> onDelta,
+            Consumer<String> onReasoning,
             BooleanSupplier cancelled
     ) {
         log.info("Tutor answering in stream mode with request: {}", request);
@@ -129,6 +147,7 @@ public class AiApplicationService {
                 provider,
                 withSystemPrompt(request, "你是因材智学系统的大学计算机专业学习导师。请用清晰、准确、循序渐进的方式回答学生问题，并给出后续学习建议。"),
                 onDelta,
+                onReasoning,
                 cancelled
         );
     }
@@ -145,9 +164,15 @@ public class AiApplicationService {
         if (rawMessages instanceof List<?> list && !list.isEmpty()) {
             for (Object item : list) {
                 if (item instanceof Map<?, ?> raw) {
-                    messages.add(Map.of(
-                            "role", stringValue(raw.get("role"), "user"),
-                            "content", stringValue(raw.get("content"), "")));
+                    String role = stringValue(raw.get("role"), "user");
+                    Map<String, Object> message = new java.util.LinkedHashMap<>();
+                    message.put("role", role);
+                    message.put("content", stringValue(raw.get("content"), ""));
+                    String reasoning = stringValue(raw.get("reasoningContent"), stringValue(raw.get("reasoning_content"), ""));
+                    if ("assistant".equalsIgnoreCase(role) && !reasoning.isEmpty()) {
+                        message.put("reasoningContent", reasoning);
+                    }
+                    messages.add(message);
                 }
             }
         } else {

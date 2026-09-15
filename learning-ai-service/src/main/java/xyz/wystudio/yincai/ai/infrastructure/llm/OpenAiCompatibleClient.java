@@ -54,6 +54,17 @@ public class OpenAiCompatibleClient {
             Consumer<String> onDelta,
             BooleanSupplier cancelled
     ) {
+        chatStream(provider, request, onDelta, ignored -> { }, cancelled);
+    }
+
+    /** Stream text and reasoning separately, matching LineCode's model callback contract. */
+    public void chatStream(
+            AiModelProviderEntity provider,
+            Map<String, Object> request,
+            Consumer<String> onDelta,
+            Consumer<String> onReasoning,
+            BooleanSupplier cancelled
+    ) {
         validateProvider(provider);
         Map<String, Object> payload = buildPayload(provider, request, true);
         String endpoint = chatCompletionsEndpoint(provider.getBaseUrl());
@@ -78,7 +89,7 @@ public class OpenAiCompatibleClient {
                 }
                 String contentType = response.headers().firstValue("Content-Type").orElse("");
                 if (contentType.toLowerCase(Locale.ROOT).contains("text/event-stream")) {
-                    boolean emitted = readSse(stream, onDelta, cancelled);
+                    boolean emitted = readSse(stream, onDelta, onReasoning, cancelled);
                     if (!emitted && (cancelled == null || !cancelled.getAsBoolean())) {
                         throw new BizException(ErrorCode.AI_SERVICE_UNAVAILABLE,
                                 "大模型返回为空，请检查模型配置或稍后重试");
@@ -87,9 +98,13 @@ public class OpenAiCompatibleClient {
                     // Some OpenAI-compatible gateways ignore stream=true and return one JSON response.
                     String responseBody = readAll(stream);
                     String content = extractChatContent(responseBody);
+                    String reasoning = extractChatReasoning(responseBody);
+                    if (StringUtils.hasText(reasoning) && onReasoning != null) {
+                        onReasoning.accept(reasoning);
+                    }
                     if (StringUtils.hasText(content)) {
-                        onDelta.accept(content);
-                    } else if (cancelled == null || !cancelled.getAsBoolean()) {
+                        if (onDelta != null) onDelta.accept(content);
+                    } else if (!StringUtils.hasText(reasoning) && (cancelled == null || !cancelled.getAsBoolean())) {
                         throw new BizException(ErrorCode.AI_SERVICE_UNAVAILABLE,
                                 "大模型返回为空，请检查模型配置或稍后重试");
                     }
@@ -134,24 +149,31 @@ public class OpenAiCompatibleClient {
     private Map<String, Object> buildPayload(AiModelProviderEntity provider, Map<String, Object> request, boolean stream) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", stringValue(request.get("model"), provider.getDefaultModel()));
-        payload.put("messages", normalizeMessages(request));
+        boolean preserveReasoning = booleanValue(request.get("preserveReasoning"), false);
+        payload.put("messages", normalizeMessages(request, preserveReasoning));
         payload.put("temperature", decimalValue(request.get("temperature"), provider.getTemperature()));
         payload.put("max_tokens", intValue(request.get("maxTokens"), intValue(request.get("max_tokens"), provider.getMaxTokens())));
         if (stream) {
             payload.put("stream", true);
+            applyReasoningRequest(provider, request, payload);
         }
         return payload;
     }
 
-    private List<Map<String, Object>> normalizeMessages(Map<String, Object> request) {
+    private List<Map<String, Object>> normalizeMessages(Map<String, Object> request, boolean preserveReasoning) {
         Object rawMessages = request.get("messages");
         if (rawMessages instanceof List<?> list && !list.isEmpty()) {
             List<Map<String, Object>> messages = new ArrayList<>();
             for (Object item : list) {
                 if (item instanceof Map<?, ?> raw) {
                     Map<String, Object> message = new LinkedHashMap<>();
-                    message.put("role", stringValue(raw.get("role"), "user"));
+                    String role = stringValue(raw.get("role"), "user");
+                    message.put("role", role);
                     message.put("content", stringValue(raw.get("content"), ""));
+                    if (preserveReasoning && "assistant".equalsIgnoreCase(role)) {
+                        String reasoning = stringValue(raw.get("reasoningContent"), stringValue(raw.get("reasoning_content"), ""));
+                        if (StringUtils.hasText(reasoning)) message.put("reasoning_content", reasoning);
+                    }
                     messages.add(message);
                 }
             }
@@ -262,6 +284,7 @@ public class OpenAiCompatibleClient {
             result.put("providerName", provider.getName());
             result.put("model", root.path("model").asText(String.valueOf(payload.get("model"))));
             result.put("content", content);
+            result.put("reasoning", extractReasoningDelta(choice.path("message")));
             result.put("finishReason", choice.path("finish_reason").asText(""));
             result.put("usage", objectMapper.convertValue(root.path("usage"), Map.class));
             return result;
@@ -270,8 +293,14 @@ public class OpenAiCompatibleClient {
         }
     }
 
-    private boolean readSse(InputStream stream, Consumer<String> onDelta, BooleanSupplier cancelled) throws IOException {
+    private boolean readSse(
+            InputStream stream,
+            Consumer<String> onDelta,
+            Consumer<String> onReasoning,
+            BooleanSupplier cancelled
+    ) throws IOException {
         boolean emitted = false;
+        ThinkTagParser thinkTagParser = new ThinkTagParser();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             StringBuilder data = new StringBuilder();
             String line;
@@ -280,7 +309,7 @@ public class OpenAiCompatibleClient {
                     return emitted;
                 }
                 if (line.isEmpty()) {
-                    emitted = emitSseData(data, onDelta) || emitted;
+                    emitted = emitSseData(data, onDelta, onReasoning, thinkTagParser) || emitted;
                     data.setLength(0);
                     continue;
                 }
@@ -292,15 +321,19 @@ public class OpenAiCompatibleClient {
                     data.append(value.startsWith(" ") ? value.substring(1) : value);
                 }
             }
-            emitted = emitSseData(data, onDelta) || emitted;
+            emitted = emitSseData(data, onDelta, onReasoning, thinkTagParser) || emitted;
+            emitted = emitParsedDelta(thinkTagParser.flush(), onDelta, onReasoning) || emitted;
         }
         return emitted;
     }
 
-    private boolean emitSseData(StringBuilder data, Consumer<String> onDelta) throws IOException {
-        if (data.length() == 0 || onDelta == null) {
-            return false;
-        }
+    private boolean emitSseData(
+            StringBuilder data,
+            Consumer<String> onDelta,
+            Consumer<String> onReasoning,
+            ThinkTagParser thinkTagParser
+    ) throws IOException {
+        if (data.length() == 0) return false;
         String raw = data.toString().trim();
         if (raw.isEmpty() || "[DONE]".equals(raw)) {
             return false;
@@ -314,19 +347,28 @@ public class OpenAiCompatibleClient {
             if (!choices.isArray() || choices.isEmpty()) {
                 return false;
             }
-            JsonNode delta = choices.path(0).path("delta");
+            JsonNode choice = choices.path(0);
+            if ("content_filter".equals(choice.path("finish_reason").asText())) {
+                throw new BizException(ErrorCode.AI_SERVICE_UNAVAILABLE, "大模型流式错误：输出被内容安全策略拦截");
+            }
+            JsonNode delta = choice.path("delta");
+            boolean emitted = false;
+            String reasoning = extractReasoningDelta(delta);
+            if (StringUtils.hasText(reasoning)) {
+                if (onReasoning != null) onReasoning.accept(reasoning);
+                emitted = true;
+            }
             String value = extractText(delta.path("content"));
             if (!StringUtils.hasText(value)) {
                 value = extractText(delta.path("text"));
             }
             if (!StringUtils.hasText(value)) {
-                value = extractText(choices.path(0).path("text"));
+                value = extractText(choice.path("text"));
             }
             if (StringUtils.hasText(value)) {
-                onDelta.accept(value);
-                return true;
+                emitted = emitParsedDelta(thinkTagParser.append(value), onDelta, onReasoning) || emitted;
             }
-            return false;
+            return emitted;
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
@@ -340,6 +382,114 @@ public class OpenAiCompatibleClient {
         } catch (Exception e) {
             throw new IOException("大模型响应解析失败：" + e.getMessage(), e);
         }
+    }
+
+    private String extractChatReasoning(String responseBody) throws IOException {
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode choice = root.path("choices").isArray() && !root.path("choices").isEmpty()
+                    ? root.path("choices").get(0) : objectMapper.createObjectNode();
+            String reasoning = extractReasoningDelta(choice.path("message"));
+            if (!StringUtils.hasText(reasoning)) reasoning = extractReasoningDelta(choice.path("delta"));
+            return reasoning;
+        } catch (Exception e) {
+            throw new IOException("大模型响应解析失败：" + e.getMessage(), e);
+        }
+    }
+
+    private String extractReasoningDelta(JsonNode delta) {
+        if (delta == null || delta.isMissingNode() || delta.isNull()) return "";
+        String value = extractText(delta.path("reasoning_content"));
+        if (StringUtils.hasText(value)) return value;
+        value = extractReasoningNode(delta.path("reasoning"));
+        if (StringUtils.hasText(value)) return value;
+        return extractReasoningNode(delta.path("reasoning_details"));
+    }
+
+    private String extractReasoningNode(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) return "";
+        if (node.isTextual()) return node.asText();
+        if (node.isArray()) {
+            StringBuilder result = new StringBuilder();
+            for (JsonNode item : node) result.append(extractReasoningNode(item));
+            return result.toString();
+        }
+        if (node.isObject()) {
+            String value = extractText(node.path("content"));
+            if (StringUtils.hasText(value)) return value;
+            value = extractText(node.path("text"));
+            if (StringUtils.hasText(value)) return value;
+            value = extractText(node.path("reasoning_content"));
+            if (StringUtils.hasText(value)) return value;
+        }
+        return "";
+    }
+
+    private void applyReasoningRequest(
+            AiModelProviderEntity provider,
+            Map<String, Object> request,
+            Map<String, Object> payload
+    ) {
+        String base = lower(provider.getBaseUrl());
+        String providerCode = lower(provider.getProviderCode());
+        String model = lower(stringValue(request.get("model"), provider.getDefaultModel()));
+        if (base.contains("integrate.api.nvidia.com") || base.contains("api.nvidia.com") || providerCode.contains("nvidia")) {
+            return;
+        }
+        String effort = normalizeReasoningEffort(request.get("reasoningEffort"));
+        boolean enabled = !"off".equals(effort);
+        if (base.contains("dashscope") || base.contains("aliyuncs") || providerCode.contains("qwen") || model.contains("qwen")) {
+            payload.put("enable_thinking", enabled);
+            if (enabled) payload.put("thinking_budget", thinkingBudget(effort));
+            if (booleanValue(request.get("preserveReasoning"), false)) payload.put("preserve_thinking", true);
+            return;
+        }
+        if (base.contains("minimax") || providerCode.contains("minimax") || model.contains("minimax") || model.contains("abab") || model.contains("m2")) {
+            payload.put("reasoning_split", enabled);
+            return;
+        }
+        if (base.contains("deepseek") || providerCode.contains("deepseek") || model.contains("deepseek")) {
+            Map<String, Object> thinking = new LinkedHashMap<>();
+            thinking.put("type", enabled ? "enabled" : "disabled");
+            payload.put("thinking", thinking);
+            if (enabled) payload.put("reasoning_effort", "high");
+            return;
+        }
+        if (base.contains("moonshot") || base.contains("kimi") || providerCode.contains("kimi") || model.contains("kimi")
+                || base.contains("bigmodel") || base.contains("zhipu") || providerCode.contains("zhipu") || model.contains("glm")
+                || base.contains("mimo") || base.contains("xiaomi") || providerCode.contains("mimo") || model.contains("mimo")) {
+            Map<String, Object> thinking = new LinkedHashMap<>();
+            thinking.put("type", enabled ? "enabled" : "disabled");
+            if (booleanValue(request.get("preserveReasoning"), false)
+                    && (base.contains("moonshot") || base.contains("kimi") || providerCode.contains("kimi") || model.contains("kimi"))) {
+                thinking.put("keep", "all");
+            }
+            payload.put("thinking", thinking);
+            if (booleanValue(request.get("preserveReasoning"), false)
+                    && (base.contains("bigmodel") || base.contains("zhipu") || providerCode.contains("zhipu") || model.contains("glm"))) {
+                payload.put("clear_thinking", false);
+            }
+            return;
+        }
+        if (enabled) {
+            Map<String, Object> reasoning = new LinkedHashMap<>();
+            reasoning.put("effort", effort);
+            payload.put("reasoning", reasoning);
+        }
+    }
+
+    private boolean emitParsedDelta(ParsedDelta parsed, Consumer<String> onDelta, Consumer<String> onReasoning) {
+        if (parsed == null) return false;
+        boolean emitted = false;
+        if (StringUtils.hasText(parsed.reasoning)) {
+            if (onReasoning != null) onReasoning.accept(parsed.reasoning);
+            emitted = true;
+        }
+        if (StringUtils.hasText(parsed.text)) {
+            if (onDelta != null) onDelta.accept(parsed.text);
+            emitted = true;
+        }
+        return emitted;
     }
 
     private String extractChatContent(JsonNode root) {
@@ -386,6 +536,82 @@ public class OpenAiCompatibleClient {
             return text.toString();
         }
         return "";
+    }
+
+    private static final class ParsedDelta {
+        private final String text;
+        private final String reasoning;
+
+        private ParsedDelta(String text, String reasoning) {
+            this.text = text == null ? "" : text;
+            this.reasoning = reasoning == null ? "" : reasoning;
+        }
+    }
+
+    /** Handles think tags that can be split across multiple upstream SSE chunks. */
+    private static final class ThinkTagParser {
+        private static final String START = "<think>";
+        private static final String END = "</think>";
+        private final StringBuilder pending = new StringBuilder();
+        private boolean thinking;
+
+        private ParsedDelta append(String delta) {
+            pending.append(delta == null ? "" : delta);
+            StringBuilder text = new StringBuilder();
+            StringBuilder reasoning = new StringBuilder();
+            while (pending.length() > 0) {
+                String tag = thinking ? END : START;
+                int index = indexOf(pending, tag);
+                if (index >= 0) {
+                    appendRange(thinking ? reasoning : text, pending, 0, index);
+                    pending.delete(0, index + tag.length());
+                    thinking = !thinking;
+                    continue;
+                }
+                int keep = trailingPrefixLength(pending, tag);
+                int emitEnd = pending.length() - keep;
+                if (emitEnd <= 0) break;
+                appendRange(thinking ? reasoning : text, pending, 0, emitEnd);
+                pending.delete(0, emitEnd);
+            }
+            return new ParsedDelta(text.toString(), reasoning.toString());
+        }
+
+        private ParsedDelta flush() {
+            String remaining = pending.toString();
+            pending.setLength(0);
+            return thinking ? new ParsedDelta("", remaining) : new ParsedDelta(remaining, "");
+        }
+
+        private int indexOf(StringBuilder source, String target) {
+            int max = source.length() - target.length();
+            for (int i = 0; i <= max; i++) {
+                int j = 0;
+                while (j < target.length() && source.charAt(i + j) == target.charAt(j)) j++;
+                if (j == target.length()) return i;
+            }
+            return -1;
+        }
+
+        private int trailingPrefixLength(StringBuilder source, String target) {
+            int max = Math.min(source.length(), target.length() - 1);
+            for (int length = max; length > 0; length--) {
+                int start = source.length() - length;
+                boolean matches = true;
+                for (int i = 0; i < length; i++) {
+                    if (source.charAt(start + i) != target.charAt(i)) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) return length;
+            }
+            return 0;
+        }
+
+        private void appendRange(StringBuilder target, StringBuilder source, int start, int end) {
+            for (int i = start; i < end; i++) target.append(source.charAt(i));
+        }
     }
 
     private String readAll(InputStream stream) throws IOException {
@@ -458,5 +684,32 @@ public class OpenAiCompatibleClient {
             return "";
         }
         return value.length() > 500 ? value.substring(0, 500) : value;
+    }
+
+    private int thinkingBudget(String effort) {
+        if ("low".equals(effort)) return 1024;
+        if ("high".equals(effort)) return 8192;
+        if ("max".equals(effort)) return 16000;
+        return 4096;
+    }
+
+    private String normalizeReasoningEffort(Object value) {
+        String effort = value == null ? "" : String.valueOf(value).trim().toLowerCase(Locale.ROOT);
+        if ("off".equals(effort) || "low".equals(effort) || "high".equals(effort) || "max".equals(effort)) {
+            return effort;
+        }
+        return "medium";
+    }
+
+    private boolean booleanValue(Object value, boolean defaultValue) {
+        if (value == null) return defaultValue;
+        if (value instanceof Boolean bool) return bool;
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty()) return defaultValue;
+        return "true".equalsIgnoreCase(text) || "1".equals(text) || "yes".equalsIgnoreCase(text);
+    }
+
+    private String lower(String value) {
+        return value == null ? "" : value.toLowerCase(Locale.ROOT);
     }
 }
