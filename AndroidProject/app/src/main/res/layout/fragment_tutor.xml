@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:background="@color/surface"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="8dp">
+        <ImageButton
+            android:id="@+id/button_tutor_menu"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="打开会话列表"
+            android:padding="7dp"
+            android:src="@drawable/ic_line_menu"
+            android:tint="@color/text_primary" />
+        <LinearLayout
+            android:id="@+id/button_tutor_title"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+            <View
+                android:layout_width="7dp"
+                android:layout_height="7dp"
+                android:background="@drawable/bg_tutor_online_dot" />
+            <TextView
+                android:id="@+id/text_tutor_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="因材导师"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginStart="2dp"
+                android:src="@drawable/ic_line_chevron_down"
+                android:tint="@color/text_secondary" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/text_tutor_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="在线"
+            android:textColor="@color/success"
+            android:textSize="11sp" />
+        <ImageButton
+            android:id="@+id/button_tutor_new"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="新建对话"
+            android:padding="7dp"
+            android:src="@drawable/ic_line_plus"
+            android:tint="@color/text_primary" />
+        <ImageButton
+            android:id="@+id/button_tutor_more"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="更多选项"
+            android:padding="7dp"
+            android:src="@drawable/ic_line_more"
+            android:tint="@color/text_secondary" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/surface_variant" />
+
+    <ScrollView
+        android:id="@+id/tutor_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+        <LinearLayout
+            android:id="@+id/tutor_history_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="18dp"
+            android:paddingBottom="20dp" />
+    </ScrollView>
+
+    <HorizontalScrollView
+        android:id="@+id/tutor_suggestions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/button_tutor_question_one"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/surface_variant"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:text="梳理一个知识点"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+            <Button
+                android:id="@+id/button_tutor_question_two"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:backgroundTint="@color/surface_variant"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:text="安排复习计划"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <LinearLayout
+        android:id="@+id/tutor_composer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/surface"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_tutor_composer"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="34dp"
+                android:gravity="center_vertical"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
+                <TextView
+                    android:id="@+id/text_tutor_mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:text="学习辅导"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="2dp"
+                    android:src="@drawable/ic_line_chevron_down"
+                    android:tint="@color/text_secondary" />
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Java 后端"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp" />
+            </LinearLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/surface_variant" />
+            <EditText
+                android:id="@+id/input_tutor_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:gravity="top|start"
+                android:hint="输入消息…"
+                android:includeFontPadding="false"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxHeight="152dp"
+                android:maxLines="6"
+                android:minHeight="68dp"
+                android:paddingStart="12dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="15sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="8dp">
+                <ImageButton
+                    android:id="@+id/button_tutor_attach"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_tutor_attach"
+                    android:contentDescription="添加内容"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_line_plus"
+                    android:tint="@color/text_secondary" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="4dp"
+                    android:gravity="center_vertical"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="学习辅导"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="Enter 发送"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp" />
+                <ImageButton
+                    android:id="@+id/button_tutor_send"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_tutor_send_idle"
+                    android:contentDescription="发送"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_line_arrow_up"
+                    android:tint="@color/text_secondary" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

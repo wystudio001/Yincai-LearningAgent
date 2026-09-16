@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="tag_thinking_header" type="id" />
+    <item name="tag_thinking_content" type="id" />
+    <item name="tag_thinking_chevron" type="id" />
+</resources>
