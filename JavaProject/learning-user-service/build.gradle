@@ -1,0 +1,11 @@
+plugins { id 'org.springframework.boot'; id 'java' }
+dependencies {
+    implementation project(':learning-common:common-core')
+    implementation project(':learning-common:common-web')
+    implementation project(':learning-common:common-security')
+    implementation project(':learning-common:common-mybatis')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.mysql:mysql-connector-j'
+    implementation 'com.baomidou:mybatis-plus-spring-boot3-starter'
+}
+bootJar { archiveBaseName = 'learning-user-service' }

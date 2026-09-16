@@ -1,0 +1,125 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.7'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+allprojects {
+    group = 'xyz.wystudio.yincai'
+    version = '0.0.1-SNAPSHOT'
+    description = 'yincai-zhixue-backend'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+    }
+    dependencies {
+        dependency 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.10'
+        dependency 'com.baomidou:mybatis-plus-jsqlparser:3.5.10'
+        dependency 'cn.hutool:hutool-all:5.8.34'
+        dependency 'com.alibaba.fastjson2:fastjson2:2.0.53'
+        dependency 'org.mapstruct:mapstruct:1.6.3'
+        dependency 'org.mapstruct:mapstruct-processor:1.6.3'
+    }
+}
+
+dependencies {
+    implementation project(':learning-common:common-core')
+    implementation project(':learning-common:common-web')
+    implementation project(':learning-common:common-security')
+    implementation project(':learning-common:common-mybatis')
+    implementation project(':learning-common:common-mq')
+    implementation project(':learning-common:common-file')
+    implementation project(':learning-common:common-ai')
+    implementation project(':learning-common:common-observability')
+    implementation project(':learning-auth-service')
+    implementation project(':learning-user-service')
+    implementation project(':learning-course-service')
+    implementation project(':learning-profile-service')
+    implementation project(':learning-resource-service')
+    implementation project(':learning-path-service')
+    implementation project(':learning-ai-service')
+    implementation project(':learning-exam-service')
+    implementation project(':learning-notify-service')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'com.mysql:mysql-connector-j'
+    implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.10'
+    implementation 'com.baomidou:mybatis-plus-jsqlparser:3.5.10'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+bootJar {
+    archiveBaseName = 'yincai-zhixue-backend'
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    plugins.withId('org.springframework.boot') {
+        tasks.named('bootJar') {
+            enabled = false
+        }
+        tasks.named('bootRun') {
+            enabled = false
+        }
+        tasks.named('jar') {
+            enabled = true
+        }
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+        }
+        dependencies {
+            dependency 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.10'
+            dependency 'com.baomidou:mybatis-plus-jsqlparser:3.5.10'
+            dependency 'com.github.xiaoymin:knife4j-openapi3-jakarta-spring-boot-starter:4.5.0'
+            dependency 'cn.hutool:hutool-all:5.8.34'
+            dependency 'com.alibaba.fastjson2:fastjson2:2.0.53'
+            dependency 'org.mapstruct:mapstruct:1.6.3'
+            dependency 'org.mapstruct:mapstruct-processor:1.6.3'
+        }
+    }
+
+    dependencies {
+        // lombok for all modules
+        compileOnly 'org.projectlombok:lombok:1.18.36'
+        annotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+        // testing
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+}

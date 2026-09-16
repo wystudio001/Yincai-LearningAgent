@@ -1,0 +1,4 @@
+dependencies {
+    implementation project(':learning-common:common-core')
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+}

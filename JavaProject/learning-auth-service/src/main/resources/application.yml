@@ -1,0 +1,30 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: learning-auth-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/learning_auth?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+yincai:
+  security:
+    jwt:
+      secret: yincai-zhixue-default-secret-key-for-jwt-signing-2026
+      access-token-expire-ms: 7200000
+      refresh-token-expire-ms: 604800000
+
+logging:
+  level:
+    xyz.wystudio: DEBUG
