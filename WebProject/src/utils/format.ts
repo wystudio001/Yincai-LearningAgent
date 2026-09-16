@@ -1,0 +1,9 @@
+export function formatPercent(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
+export function maskSecret(value: string) {
+  if (!value) return '';
+  if (value.length <= 8) return '********';
+  return `${value.slice(0, 4)}****${value.slice(-4)}`;
+}
