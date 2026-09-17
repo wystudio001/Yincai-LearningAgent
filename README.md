@@ -50,9 +50,30 @@ yincai-learning-agent/
 ├── AndroidProject/   # Android 学生端
 ├── JavaProject/      # Java 后端与基础设施脚本
 ├── WebProject/       # Web 教学管理端
+├── docs/             # 项目运行截图
 ├── LICENSE
 └── README.md
 ```
+
+## 项目运行截图
+
+### Web 前端登录页面
+
+<p align="center">
+  <img src="docs/web-login.png" alt="Web 前端登录页面" width="100%">
+</p>
+
+### Web 前端大屏页面
+
+<p align="center">
+  <img src="docs/web-dashboard.png" alt="Web 前端大屏页面" width="100%">
+</p>
+
+### Android 学生端主页面
+
+<p align="center">
+  <img src="docs/android.png" alt="Android 学生端主页面" width="360">
+</p>
 
 ## 快速开始
 
